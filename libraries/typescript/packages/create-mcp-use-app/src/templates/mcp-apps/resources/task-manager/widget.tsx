@@ -4,8 +4,9 @@ import type { TaskManagerProps, Task } from "./types";
 import { propSchema } from "./types";
 import "../styles.css";
 
-// Widget metadata for registration
+// Widget metadata for registration - using MCP Apps type
 export const widgetMetadata: WidgetMetadata = {
+  type: "mcpApp",
   description: "Task manager widget using MCP Apps standard",
   props: propSchema,
 };
@@ -69,7 +70,7 @@ const TaskItem: React.FC<{
 
 // Main Task Manager component
 const TaskManager: React.FC = () => {
-  const { props, callTool, sendMessage, theme } = useWidget<TaskManagerProps>();
+  const { props, callTool, sendFollowUpMessage, theme } = useWidget<TaskManagerProps>();
 
   // Default tasks if none provided
   const defaultTasks: Task[] = [
@@ -134,7 +135,7 @@ const TaskManager: React.FC = () => {
 
     try {
       addLog(`Sending message via MCP Apps: "${message}"`);
-      await sendMessage(message);
+      await sendFollowUpMessage(message);
       addLog("Message sent successfully");
     } catch (error) {
       addLog(`Message error: ${(error as Error).message}`);
