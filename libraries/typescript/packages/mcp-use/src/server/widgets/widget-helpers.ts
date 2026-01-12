@@ -251,23 +251,33 @@ export function getContentType(filename: string): string {
 }
 
 /**
+ * Host type for widget template injection
+ */
+export type WidgetHostType = "apps-sdk" | "mcp-app" | "standalone";
+
+/**
  * Process widget HTML with base URL injection and path conversion
  *
  * @param html - Original HTML content
  * @param widgetName - Widget identifier
  * @param baseUrl - Server base URL
+ * @param hostType - Optional host type to inject for runtime detection
  * @returns Processed HTML with injected base tag and absolute URLs
  *
  * @example
  * ```typescript
  * const html = '<html><head></head><body>...</body></html>';
  * const processed = processWidgetHtml(html, 'kanban-board', 'http://localhost:3000');
+ *
+ * // With host type injection for MCP Apps
+ * const mcpAppHtml = processWidgetHtml(html, 'kanban-board', 'http://localhost:3000', 'mcp-app');
  * ```
  */
 export function processWidgetHtml(
   html: string,
   widgetName: string,
-  baseUrl: string
+  baseUrl: string,
+  hostType?: WidgetHostType
 ): string {
   let processedHtml = html;
 
@@ -313,10 +323,16 @@ export function processWidgetHtml(
       `href="${baseUrl}/mcp-use/widgets/$1"`
     );
 
-    // Add window.__getFile and window.__mcpPublicUrl to head
+    // Build the initialization script
+    // Include host type if specified (for MCP Apps or Apps SDK explicit mode)
+    const hostTypeInit = hostType
+      ? `window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = "${hostType}";`
+      : "";
+
+    // Add window.__getFile, window.__mcpPublicUrl, and optional host type to head
     processedHtml = processedHtml.replace(
       /<head[^>]*>/i,
-      `<head>\n    <script>window.__getFile = (filename) => { return "${baseUrl}/mcp-use/widgets/${widgetName}/"+filename }; window.__mcpPublicUrl = "${baseUrl}/mcp-use/public";</script>`
+      `<head>\n    <script>${hostTypeInit}window.__getFile = (filename) => { return "${baseUrl}/mcp-use/widgets/${widgetName}/"+filename }; window.__mcpPublicUrl = "${baseUrl}/mcp-use/public";</script>`
     );
   }
 
@@ -439,7 +455,8 @@ export function createWidgetRegistration(
 export async function createWidgetUIResource(
   definition: UIResourceDefinition,
   params: Record<string, any>,
-  serverConfig: WidgetServerConfig
+  serverConfig: WidgetServerConfig,
+  hostType?: WidgetHostType
 ): Promise<UIResourceContent> {
   // If baseUrl is set, parse it to extract protocol, host, and port
   let configBaseUrl = `http://${serverConfig.serverHost}`;
@@ -460,6 +477,7 @@ export async function createWidgetUIResource(
     baseUrl: configBaseUrl,
     port: configPort,
     buildId: serverConfig.buildId,
+    hostType, // Pass host type to URL config for HTML processing
   };
 
   const uiResource = await createUIResourceFromDefinition(

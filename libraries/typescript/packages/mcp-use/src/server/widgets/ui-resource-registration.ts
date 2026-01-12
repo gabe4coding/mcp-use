@@ -203,6 +203,89 @@ export function uiResourceRegistration<T extends UIResourceServer>(
         };
       },
     });
+
+    // DUAL REGISTRATION: Also register MCP App resource (text/html;profile=mcp-app)
+    // This allows the same widget to work with both OpenAI Apps SDK and MCP Apps hosts
+    const mcpAppUri = generateWidgetUri(
+      definition.name,
+      server.buildId,
+      "-mcp.html"
+    );
+    const mcpAppMimeType = "text/html;profile=mcp-app";
+
+    // Build MCP App specific metadata with CSP
+    const mcpAppMeta: Record<string, unknown> = {
+      ...definition._meta,
+      ui: {
+        csp: {
+          "default-src": ["'self'"],
+          "script-src": ["'self'", "'unsafe-inline'"],
+          "style-src": ["'self'", "'unsafe-inline'"],
+          "connect-src": [
+            "'self'",
+            serverConfig.serverBaseUrl || `http://${serverConfig.serverHost}:${serverConfig.serverPort}`,
+          ],
+        },
+        domain: serverConfig.serverBaseUrl || `http://${serverConfig.serverHost}:${serverConfig.serverPort}`,
+      },
+    };
+
+    server.resource({
+      name: `${definition.name}-mcp-app`,
+      uri: mcpAppUri,
+      title: definition.title,
+      description: definition.description,
+      mimeType: mcpAppMimeType,
+      _meta: mcpAppMeta,
+      annotations: definition.annotations,
+      readCallback: async () => {
+        const uiResource = await createWidgetUIResource(
+          definition,
+          {},
+          serverConfig,
+          "mcp-app" // Pass host type for template injection
+        );
+
+        uiResource.resource.uri = mcpAppUri;
+        uiResource.resource.mimeType = mcpAppMimeType;
+
+        return {
+          contents: [uiResource.resource],
+        };
+      },
+    });
+
+    // Also register dynamic template for MCP App
+    const mcpAppUriTemplate = `ui://widget/${definition.name}${buildIdPart}-{id}-mcp.html`;
+
+    server.resourceTemplate({
+      name: `${definition.name}-mcp-app-dynamic`,
+      resourceTemplate: {
+        uriTemplate: mcpAppUriTemplate,
+        name: definition.title || definition.name,
+        description: definition.description,
+        mimeType: mcpAppMimeType,
+      },
+      _meta: mcpAppMeta,
+      title: definition.title,
+      description: definition.description,
+      annotations: definition.annotations,
+      readCallback: async (uri: URL, params: Record<string, string>) => {
+        const uiResource = await createWidgetUIResource(
+          definition,
+          {},
+          serverConfig,
+          "mcp-app"
+        );
+
+        uiResource.resource.uri = uri.toString();
+        uiResource.resource.mimeType = mcpAppMimeType;
+
+        return {
+          contents: [uiResource.resource],
+        };
+      },
+    });
   }
 
   // Check if tool should be registered (defaults to true for backward compatibility)

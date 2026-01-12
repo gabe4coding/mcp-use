@@ -19,12 +19,19 @@ import type {
 } from "../types/resource.js";
 
 /**
+ * Host type for widget template injection
+ */
+export type WidgetHostType = "apps-sdk" | "mcp-app" | "standalone";
+
+/**
  * Configuration for building widget URLs
  */
 export interface UrlConfig {
   baseUrl: string;
   port: number | string;
   buildId?: string;
+  /** Host type to inject into HTML for runtime detection */
+  hostType?: WidgetHostType;
 }
 
 /**
@@ -176,14 +183,36 @@ export async function createRemoteDomResource(
 export function createAppsSdkResource(
   uri: string,
   htmlTemplate: string,
-  metadata?: AppsSdkMetadata
+  metadata?: AppsSdkMetadata,
+  hostType?: WidgetHostType
 ): UIResourceContent {
   // For Apps SDK, we create the resource structure manually following the official pattern
   // from https://developers.openai.com/apps-sdk/build/mcp-server
+  let processedHtml = htmlTemplate;
+
+  // Inject host type if specified (for MCP Apps mode)
+  if (hostType) {
+    const hostTypeScript = `<script>window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = "${hostType}";</script>`;
+
+    // Try to inject after <head> tag
+    if (processedHtml.includes("<head>")) {
+      processedHtml = processedHtml.replace("<head>", `<head>${hostTypeScript}`);
+    } else if (processedHtml.includes("<head ")) {
+      // Handle <head with attributes
+      processedHtml = processedHtml.replace(
+        /<head[^>]*>/i,
+        (match) => `${match}${hostTypeScript}`
+      );
+    } else {
+      // Prepend if no head tag found
+      processedHtml = hostTypeScript + processedHtml;
+    }
+  }
+
   const resource: any = {
     uri,
     mimeType: "text/html+skybridge",
-    text: htmlTemplate,
+    text: processedHtml,
   };
 
   // Add metadata if provided
@@ -259,7 +288,8 @@ export async function createUIResourceFromDefinition(
       return createAppsSdkResource(
         uri,
         definition.htmlTemplate,
-        definition.appsSdkMetadata
+        definition.appsSdkMetadata,
+        config.hostType
       );
     }
 
