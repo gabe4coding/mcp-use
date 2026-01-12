@@ -365,7 +365,7 @@ program
   .argument("[project-name]", "Name of the MCP server project")
   .option(
     "-t, --template <template>",
-    "Template to use (starter, mcp-ui, apps-sdk) or GitHub repo URL (owner/repo or https://github.com/owner/repo)"
+    "Template to use (starter, mcp-apps, apps-sdk) or GitHub repo URL (owner/repo or https://github.com/owner/repo)"
   )
   .option("--list-templates", "List all available templates")
   .option("--install", "Install dependencies after creating project")
@@ -676,6 +676,10 @@ program
         if (validatedTemplate === "mcp-ui") {
           console.log("   ├── resources/");
           console.log("   │   └── kanban-board.tsx");
+        }
+        if (validatedTemplate === "mcp-apps") {
+          console.log("   ├── resources/");
+          console.log("   │   └── task-manager/ (dual host support widget)");
         }
         if (validatedTemplate === "starter") {
           console.log("   ├── resources/");
@@ -1002,7 +1006,7 @@ async function copyTemplate(
       '💡 Tip: Use "starter" template for a comprehensive MCP server with all features'
     );
     console.log(
-      '💡 Tip: Use "mcp-ui" template for a MCP server with mcp-ui resources'
+      '💡 Tip: Use "mcp-apps" template for a MCP server with dual host support (Apps SDK + MCP Apps)'
     );
     console.log(
       '💡 Tip: Use "apps-sdk" template for a MCP server with OpenAI Apps SDK integration'
