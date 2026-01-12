@@ -16,7 +16,6 @@
     "ui",
     "react",
     "widgets",
-    "mcp-ui",
     "apps-sdk"
   ],
   "main": "dist/index.js",

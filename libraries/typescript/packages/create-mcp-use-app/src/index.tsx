@@ -673,10 +673,6 @@ program
           console.log("   ├── resources/");
           console.log("   │   └── display-weather.tsx");
         }
-        if (validatedTemplate === "mcp-ui") {
-          console.log("   ├── resources/");
-          console.log("   │   └── kanban-board.tsx");
-        }
         if (validatedTemplate === "mcp-apps") {
           console.log("   ├── resources/");
           console.log("   │   └── task-manager/ (dual host support widget)");
