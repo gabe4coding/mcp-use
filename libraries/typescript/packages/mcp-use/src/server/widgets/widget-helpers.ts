@@ -282,7 +282,8 @@ export function processWidgetHtml(
   let processedHtml = html;
 
   // Inject or replace base tag with server base URL
-  if (baseUrl && processedHtml) {
+  // NOTE: Skip base tag for mcp-app host type - it causes CSP base-uri violations
+  if (baseUrl && processedHtml && hostType !== "mcp-app") {
     // Remove HTML comments temporarily to avoid matching base tags inside comments
     let htmlWithoutComments = processedHtml;
     let prevHtmlWithoutComments;
@@ -312,7 +313,14 @@ export function processWidgetHtml(
         );
       }
     }
+  }
 
+  // For mcp-app, remove any existing base tags to avoid CSP violations
+  if (hostType === "mcp-app") {
+    processedHtml = processedHtml.replace(/<base\s+[^>]*\/?>/gi, "");
+  }
+
+  if (baseUrl && processedHtml) {
     // Replace relative paths that start with /mcp-use for scripts and CSS with absolute URLs
     processedHtml = processedHtml.replace(
       /src="\/mcp-use\/widgets\/([^"]+)"/g,
@@ -340,20 +348,58 @@ export function processWidgetHtml(
 }
 
 /**
+ * Widget registration return type - discriminated union of appsSdk and mcpApp
+ */
+export type WidgetRegistration =
+  | {
+      name: string;
+      title: string;
+      description: string;
+      type: "appsSdk";
+      props: import("../types/resource.js").WidgetProps;
+      _meta: Record<string, unknown>;
+      htmlTemplate: string;
+      appsSdkMetadata: Record<string, any>;
+    }
+  | {
+      name: string;
+      title: string;
+      description: string;
+      type: "mcpApp";
+      props: import("../types/resource.js").WidgetProps;
+      _meta: Record<string, unknown>;
+      htmlTemplate: string;
+      mcpAppMetadata?: import("../types/resource.js").McpAppMetadata;
+    };
+
+/**
  * Create a widget registration object with standard metadata
+ *
+ * Supports both appsSdk (OpenAI Apps SDK) and mcpApp (MCP Apps standard) types.
+ * The type is determined by the `type` field in metadata - defaults to appsSdk.
  *
  * @param widgetName - Widget identifier
  * @param metadata - Widget metadata from file or manifest
  * @param html - Processed HTML template
  * @param serverConfig - Server configuration for CSP and URLs
  * @param isDev - Whether this is development mode
- * @returns Widget registration object
+ * @returns Widget registration object (appsSdk or mcpApp)
  *
  * @example
  * ```typescript
- * const registration = createWidgetRegistration(
+ * // Apps SDK widget (default)
+ * const appsSdkReg = createWidgetRegistration(
  *   'kanban-board',
  *   { title: 'Kanban Board', description: 'Task board' },
+ *   '<html>...</html>',
+ *   { serverBaseUrl: 'http://localhost:3000', cspUrls: [] },
+ *   true
+ * );
+ *
+ * // MCP App widget
+ * const mcpAppReg = createWidgetRegistration(
+ *   'task-manager',
+ *   { title: 'Task Manager', type: 'mcpApp' },
  *   '<html>...</html>',
  *   { serverBaseUrl: 'http://localhost:3000', cspUrls: [] },
  *   true
@@ -367,6 +413,7 @@ export function createWidgetRegistration(
     | {
         title?: string;
         description?: string;
+        type?: "appsSdk" | "mcpApp";
         props?: unknown;
         inputs?: unknown;
         schema?: unknown;
@@ -375,16 +422,19 @@ export function createWidgetRegistration(
   html: string,
   serverConfig: { serverBaseUrl: string; cspUrls: string[] },
   isDev: boolean = false
-): {
-  name: string;
-  title: string;
-  description: string;
-  type: "appsSdk";
-  props: import("../types/resource.js").WidgetProps;
-  _meta: Record<string, unknown>;
-  htmlTemplate: string;
-  appsSdkMetadata: Record<string, any>;
-} {
+): WidgetRegistration {
+  // Check if metadata specifies mcpApp type
+  if (metadata.type === "mcpApp") {
+    return createMcpAppWidgetDefinitionFromMetadata(
+      widgetName,
+      metadata as any,
+      html,
+      serverConfig,
+      isDev
+    );
+  }
+
+  // Default to appsSdk type
   // Use props field (preferred) with fallback to inputs/schema for backward compatibility
   const props = (metadata.props ||
     metadata.inputs ||
@@ -448,6 +498,99 @@ export function createWidgetRegistration(
             ?.resource_domains as string[]) || []),
         ],
       },
+    },
+  };
+}
+
+/**
+ * Create MCP App widget definition from widget metadata
+ *
+ * Transforms raw widget metadata into a properly typed McpAppUIResource definition
+ * with MCP App-specific metadata including CSP configuration.
+ *
+ * @param widgetName - Unique identifier for the widget
+ * @param metadata - Raw widget metadata from widget.tsx export
+ * @param html - Pre-processed HTML template content
+ * @param serverConfig - Server configuration for CSP domains
+ * @param isDev - Whether running in development mode
+ * @returns Fully typed MCP App widget definition
+ */
+export function createMcpAppWidgetDefinitionFromMetadata(
+  widgetName: string,
+  metadata: {
+    description?: string;
+    title?: string;
+    exposeAsTool?: boolean;
+    mcpAppMetadata?: Record<string, unknown>;
+    _meta?: Record<string, unknown>;
+    props?: unknown;
+    inputs?: unknown;
+    schema?: unknown;
+    [key: string]: unknown;
+  },
+  html: string,
+  serverConfig: { serverBaseUrl: string; cspUrls: string[] },
+  isDev: boolean = false
+): {
+  name: string;
+  title: string;
+  description: string;
+  type: "mcpApp";
+  props: import("../types/resource.js").WidgetProps;
+  _meta: Record<string, unknown>;
+  htmlTemplate: string;
+  mcpAppMetadata: import("../types/resource.js").McpAppMetadata;
+} {
+  // Use props field (preferred) with fallback to inputs/schema for backward compatibility
+  const props = (metadata.props ||
+    metadata.inputs ||
+    metadata.schema ||
+    {}) as import("../types/resource.js").WidgetProps;
+  const description =
+    (metadata.description as string | undefined) || `Widget: ${widgetName}`;
+  const title = (metadata.title as string | undefined) || widgetName;
+  // Extract exposeAsTool flag (defaults to true if not specified)
+  const exposeAsTool =
+    metadata.exposeAsTool !== undefined ? metadata.exposeAsTool : true;
+
+  const mcp_connect_domain = serverConfig.serverBaseUrl
+    ? new URL(serverConfig.serverBaseUrl || "").origin
+    : null;
+
+  return {
+    name: widgetName,
+    title: title as string,
+    description: description as string,
+    type: "mcpApp",
+    props: props as import("../types/resource.js").WidgetProps,
+    _meta: {
+      "mcp-use/widget": {
+        name: widgetName,
+        title: title,
+        description: description,
+        type: "mcpApp",
+        props: props,
+        html: html,
+        dev: isDev,
+        exposeAsTool: exposeAsTool,
+      },
+      ...(metadata._meta || {}),
+    },
+    htmlTemplate: html,
+    mcpAppMetadata: {
+      description: description,
+      domain: mcp_connect_domain || undefined,
+      csp: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "connect-src": [
+          "'self'",
+          ...(mcp_connect_domain ? [mcp_connect_domain] : []),
+          ...serverConfig.cspUrls,
+        ],
+      },
+      ...(metadata.mcpAppMetadata || {}),
     },
   };
 }
@@ -597,7 +740,9 @@ export async function registerWidgetFromTemplate(
   }
 
   // Process HTML with base URL injection and path conversion
-  html = processWidgetHtml(html, widgetName, serverConfig.serverBaseUrl);
+  // Pass hostType for mcpApp widgets to avoid CSP base-uri violations
+  const hostType = metadata.type === "mcpApp" ? "mcp-app" : undefined;
+  html = processWidgetHtml(html, widgetName, serverConfig.serverBaseUrl, hostType);
 
   // Ensure metadata has proper fallbacks
   const processedMetadata = ensureWidgetMetadata(metadata, widgetName);

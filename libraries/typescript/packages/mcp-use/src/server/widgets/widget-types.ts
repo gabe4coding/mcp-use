@@ -37,11 +37,9 @@ export interface MountWidgetsOptions {
 }
 
 /**
- * Widget registration callback function type
- *
- * Used to register discovered widgets with the MCP server.
+ * Apps SDK widget definition for registration
  */
-export type RegisterWidgetCallback = (widgetDefinition: {
+export interface AppsSdkWidgetDefinition {
   name: string;
   title: string;
   description: string;
@@ -50,4 +48,27 @@ export type RegisterWidgetCallback = (widgetDefinition: {
   _meta: Record<string, unknown>;
   htmlTemplate: string;
   appsSdkMetadata: import("../types/resource.js").AppsSdkMetadata;
-}) => void;
+}
+
+/**
+ * MCP App widget definition for registration
+ */
+export interface McpAppWidgetDefinition {
+  name: string;
+  title: string;
+  description: string;
+  type: "mcpApp";
+  props: import("../types/resource.js").WidgetProps;
+  _meta: Record<string, unknown>;
+  htmlTemplate: string;
+  mcpAppMetadata?: import("../types/resource.js").McpAppMetadata;
+}
+
+/**
+ * Widget registration callback function type
+ *
+ * Used to register discovered widgets with the MCP server.
+ */
+export type RegisterWidgetCallback = (
+  widgetDefinition: AppsSdkWidgetDefinition | McpAppWidgetDefinition
+) => void;

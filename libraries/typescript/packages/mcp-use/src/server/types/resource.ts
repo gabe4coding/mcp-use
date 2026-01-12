@@ -414,13 +414,54 @@ export interface AppsSdkUIResource extends BaseUIResourceDefinition {
 }
 
 /**
+ * MCP App metadata fields for the MCP Apps standard
+ *
+ * These fields control CSP, domain configuration, and widget behavior
+ * for MCP Apps compliant hosts.
+ */
+export interface McpAppMetadata extends Record<string, unknown> {
+  /** Content Security Policy for the widget */
+  csp?: {
+    "default-src"?: string[];
+    "script-src"?: string[];
+    "style-src"?: string[];
+    "connect-src"?: string[];
+    "img-src"?: string[];
+    "font-src"?: string[];
+  };
+  /** Domain configuration for the widget */
+  domain?: string;
+  /** Description of the widget */
+  description?: string;
+}
+
+/**
+ * MCP App UI resource - MCP Apps standard compatible widget
+ *
+ * This type follows the MCP Apps standard:
+ * - Uses text/html;profile=mcp-app mime type
+ * - Uses @modelcontextprotocol/ext-apps for host communication
+ * - Works with MCP Apps compliant hosts
+ *
+ * @see https://github.com/modelcontextprotocol/specification
+ */
+export interface McpAppUIResource extends BaseUIResourceDefinition {
+  type: "mcpApp";
+  /** HTML template content - the component that will be rendered */
+  htmlTemplate: string;
+  /** MCP App-specific metadata (CSP, domain, etc.) */
+  mcpAppMetadata?: McpAppMetadata;
+}
+
+/**
  * Discriminated union of all UI resource types
  */
 export type UIResourceDefinition =
   | ExternalUrlUIResource
   | RawHtmlUIResource
   | RemoteDomUIResource
-  | AppsSdkUIResource;
+  | AppsSdkUIResource
+  | McpAppUIResource;
 
 export interface WidgetConfig {
   /** Widget directory name */

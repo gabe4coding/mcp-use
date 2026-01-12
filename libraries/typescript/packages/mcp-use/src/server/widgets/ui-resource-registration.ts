@@ -124,9 +124,17 @@ export function uiResourceRegistration<T extends UIResourceServer>(
       resourceUri = generateWidgetUri(definition.name, server.buildId, ".html");
       mimeType = "text/html+skybridge";
       break;
+    case "mcpApp":
+      resourceUri = generateWidgetUri(
+        definition.name,
+        undefined,
+        ".html"
+      );
+      mimeType = "text/html;profile=mcp-app";
+      break;
     default:
       throw new Error(
-        `Unsupported UI resource type. Must be one of: externalUrl, rawHtml, remoteDom, appsSdk`
+        `Unsupported UI resource type. Must be one of: externalUrl, rawHtml, remoteDom, appsSdk, mcpApp`
       );
   }
 
@@ -214,19 +222,20 @@ export function uiResourceRegistration<T extends UIResourceServer>(
     const mcpAppMimeType = "text/html;profile=mcp-app";
 
     // Build MCP App specific metadata with CSP
+    // Per MCP Apps spec: use connectDomains and resourceDomains for CSP allowlisting
+    const serverOrigin =
+      serverConfig.serverBaseUrl ||
+      `http://${serverConfig.serverHost}:${serverConfig.serverPort}`;
+
     const mcpAppMeta: Record<string, unknown> = {
       ...definition._meta,
       ui: {
         csp: {
-          "default-src": ["'self'"],
-          "script-src": ["'self'", "'unsafe-inline'"],
-          "style-src": ["'self'", "'unsafe-inline'"],
-          "connect-src": [
-            "'self'",
-            serverConfig.serverBaseUrl || `http://${serverConfig.serverHost}:${serverConfig.serverPort}`,
-          ],
+          // Allow network requests (fetch, XHR, WebSocket) to the MCP server
+          connectDomains: [serverOrigin],
+          // Allow loading scripts, styles, images from the MCP server
+          resourceDomains: [serverOrigin],
         },
-        domain: serverConfig.serverBaseUrl || `http://${serverConfig.serverHost}:${serverConfig.serverPort}`,
       },
     };
 
@@ -288,6 +297,63 @@ export function uiResourceRegistration<T extends UIResourceServer>(
     });
   }
 
+  // For MCP App type, register resource and template (MCP Apps standard only)
+  if (definition.type === "mcpApp") {
+    // Build URI template with build ID if available
+    const buildIdPart = server.buildId ? `-${server.buildId}` : "";
+    const mcpAppMimeType = "text/html;profile=mcp-app";
+
+    // Build MCP App specific metadata with CSP
+    // Per MCP Apps spec: use connectDomains and resourceDomains for CSP allowlisting
+    const serverOrigin =
+      serverConfig.serverBaseUrl ||
+      `http://${serverConfig.serverHost}:${serverConfig.serverPort}`;
+
+    const mcpAppMeta: Record<string, unknown> = {
+      ...definition._meta,
+      ui: {
+        csp: definition.mcpAppMetadata?.csp || {
+          // Allow network requests (fetch, XHR, WebSocket) to the MCP server
+          connectDomains: [serverOrigin],
+          // Allow loading scripts, styles, images from the MCP server
+          resourceDomains: [serverOrigin],
+        },
+      },
+    };
+
+    // Register dynamic template for MCP App
+    const mcpAppUriTemplate = `ui://widget/${definition.name}${buildIdPart}-{id}-mcp.html`;
+
+    server.resourceTemplate({
+      name: `${definition.name}-dynamic`,
+      resourceTemplate: {
+        uriTemplate: mcpAppUriTemplate,
+        name: definition.title || definition.name,
+        description: definition.description,
+        mimeType: mcpAppMimeType,
+      },
+      _meta: mcpAppMeta,
+      title: definition.title,
+      description: definition.description,
+      annotations: definition.annotations,
+      readCallback: async (uri: URL, params: Record<string, string>) => {
+        const uiResource = await createWidgetUIResource(
+          definition,
+          {},
+          serverConfig,
+          "mcp-app"
+        );
+
+        uiResource.resource.uri = uri.toString();
+        uiResource.resource.mimeType = mcpAppMimeType;
+
+        return {
+          contents: [uiResource.resource],
+        };
+      },
+    });
+  }
+
   // Check if tool should be registered (defaults to true for backward compatibility)
   // Check direct property first (from programmatic API), then fall back to _meta (from file-based widgets)
   const widgetMetadata = definition._meta?.["mcp-use/widget"] as
@@ -320,6 +386,13 @@ export function uiResourceRegistration<T extends UIResourceServer>(
           toolMetadata[field] = definition.appsSdkMetadata[field];
         }
       }
+    }
+
+    // For MCP App type, add ui.resourceUri to tool metadata (required by MCP Apps spec)
+    if (definition.type === "mcpApp") {
+      toolMetadata["ui"] = {
+        resourceUri: resourceUri, // e.g., "ui://widget/task-manager-mcp.html"
+      };
     }
 
     // Determine the input schema - check if props is a Zod schema
@@ -455,6 +528,51 @@ export function uiResourceRegistration<T extends UIResourceServer>(
           _meta: uniqueToolMetadata,
           content: content,
           structuredContent: toolOutputResult.structuredContent,
+        };
+      }
+
+      // For MCP App type, return text content + structuredContent (NO embedded resource)
+      // Per MCP Apps spec: tools reference pre-declared resources via _meta.ui.resourceUri
+      if (definition.type === "mcpApp") {
+        // Use static URI matching the registered resource (no random ID for mcpApp)
+        const staticUri = generateWidgetUri(
+          definition.name,
+          undefined,
+          ".html"
+        );
+
+        // Generate tool output content (what the model sees - text only)
+        let textContent = `Displaying ${displayName}`;
+
+        if (definition.toolOutput) {
+          const toolOutputResult =
+            typeof definition.toolOutput === "function"
+              ? definition.toolOutput(params)
+              : definition.toolOutput;
+          if (toolOutputResult.content && Array.isArray(toolOutputResult.content)) {
+            // Extract text from custom toolOutput
+            const textItem = toolOutputResult.content.find(
+              (c: any) => c.type === "text"
+            );
+            if (textItem && "text" in textItem) {
+              textContent = textItem.text as string;
+            }
+          }
+        }
+
+        // Return MCP Apps compliant response:
+        // - _meta.ui.resourceUri points to the pre-declared resource
+        // - content has text for model context
+        // - structuredContent has widget props/data
+        return {
+          _meta: {
+            "mcp-use/props": params,
+            ui: {
+              resourceUri: staticUri,
+            },
+          },
+          content: [{ type: "text" as const, text: textContent }],
+          structuredContent: params,
         };
       }
 

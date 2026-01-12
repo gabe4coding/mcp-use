@@ -1,4 +1,4 @@
-import type { AppsSdkMetadata } from "./resource.js";
+import type { AppsSdkMetadata, McpAppMetadata } from "./resource.js";
 import type { InputDefinition, ResourceAnnotations } from "./common.js";
 import type { ToolAnnotations } from "./tool.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -7,6 +7,8 @@ import type { z } from "zod";
 export interface WidgetMetadata {
   title?: string;
   description?: string;
+  /** Widget type - defaults to 'appsSdk' for backward compatibility */
+  type?: "appsSdk" | "mcpApp";
   /** Zod schema for widget props validation (preferred) or InputDefinition array */
   props?: z.ZodObject<any> | InputDefinition[];
   /** @deprecated Use `props` instead - Zod schema for widget input validation */
@@ -42,4 +44,6 @@ export interface WidgetMetadata {
   annotations?: ResourceAnnotations & Partial<ToolAnnotations>;
   _meta?: Record<string, unknown>;
   appsSdkMetadata?: AppsSdkMetadata;
+  /** MCP App specific metadata (CSP, domain, etc.) - only for mcpApp type */
+  mcpAppMetadata?: McpAppMetadata;
 }

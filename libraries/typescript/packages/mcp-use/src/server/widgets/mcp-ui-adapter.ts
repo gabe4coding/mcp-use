@@ -16,6 +16,7 @@ import type {
   UIResourceDefinition,
   UIEncoding,
   AppsSdkMetadata,
+  McpAppMetadata,
 } from "../types/resource.js";
 
 /**
@@ -227,6 +228,67 @@ export function createAppsSdkResource(
 }
 
 /**
+ * Create a MCP App resource from HTML template
+ *
+ * Creates a resource for the MCP Apps standard (text/html;profile=mcp-app).
+ * Uses @modelcontextprotocol/ext-apps for host communication.
+ *
+ * @param uri - Resource URI (e.g., 'ui://widget/task-manager-mcp.html')
+ * @param htmlTemplate - HTML template with embedded JS/CSS
+ * @param metadata - MCP App metadata (CSP, domain, etc.)
+ * @param hostType - Host type to inject for runtime detection
+ * @returns UIResourceContent with mcp-app MIME type
+ */
+export function createMcpAppResource(
+  uri: string,
+  htmlTemplate: string,
+  metadata?: McpAppMetadata,
+  hostType?: WidgetHostType
+): UIResourceContent {
+  let processedHtml = htmlTemplate;
+
+  // Inject host type if specified
+  const effectiveHostType = hostType || "mcp-app";
+  const hostTypeScript = `<script>window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = "${effectiveHostType}";</script>`;
+
+  // Try to inject after <head> tag
+  if (processedHtml.includes("<head>")) {
+    processedHtml = processedHtml.replace("<head>", `<head>${hostTypeScript}`);
+  } else if (processedHtml.includes("<head ")) {
+    // Handle <head with attributes
+    processedHtml = processedHtml.replace(
+      /<head[^>]*>/i,
+      (match) => `${match}${hostTypeScript}`
+    );
+  } else {
+    // Prepend if no head tag found
+    processedHtml = hostTypeScript + processedHtml;
+  }
+
+  const resource: any = {
+    uri,
+    mimeType: "text/html;profile=mcp-app",
+    text: processedHtml,
+  };
+
+  // Add metadata if provided - convert to MCP App format
+  if (metadata && Object.keys(metadata).length > 0) {
+    resource._meta = {
+      ui: {
+        csp: metadata.csp,
+        domain: metadata.domain,
+      },
+      description: metadata.description,
+    };
+  }
+
+  return {
+    type: "resource",
+    resource,
+  };
+}
+
+/**
  * Create a UIResource from a high-level definition
  *
  * This is the main function that routes to the appropriate resource creator
@@ -244,10 +306,16 @@ export async function createUIResourceFromDefinition(
 ): Promise<UIResourceContent> {
   // Generate URI with build ID if available (for cache busting)
   const buildIdPart = config.buildId ? `-${config.buildId}` : "";
-  const uri =
-    definition.type === "appsSdk"
-      ? (`ui://widget/${definition.name}${buildIdPart}.html` as `ui://${string}`)
-      : (`ui://widget/${definition.name}${buildIdPart}` as `ui://${string}`);
+  let uri: `ui://${string}`;
+
+  if (definition.type === "appsSdk") {
+    uri = `ui://widget/${definition.name}${buildIdPart}.html` as `ui://${string}`;
+  } else if (definition.type === "mcpApp") {
+    uri = `ui://widget/${definition.name}.html` as `ui://${string}`;
+  } else {
+    uri = `ui://widget/${definition.name}${buildIdPart}` as `ui://${string}`;
+  }
+
   const encoding = definition.encoding || "text";
 
   switch (definition.type) {
@@ -289,6 +357,15 @@ export async function createUIResourceFromDefinition(
         uri,
         definition.htmlTemplate,
         definition.appsSdkMetadata,
+        config.hostType
+      );
+    }
+
+    case "mcpApp": {
+      return createMcpAppResource(
+        uri,
+        definition.htmlTemplate,
+        definition.mcpAppMetadata,
         config.hostType
       );
     }
