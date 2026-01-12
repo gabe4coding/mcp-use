@@ -95,12 +95,13 @@ export function uiResourceRegistration<T extends UIResourceServer>(
 ): T {
   const displayName = definition.title || definition.name;
 
-  // Store widget definition for use by tools with returnsWidget option
-  if (definition.type === "appsSdk" && definition._meta) {
-    server.widgetDefinitions.set(
-      definition.name,
-      definition._meta as Record<string, unknown>
-    );
+  // Store widget definition for use by tools with widget config
+  // Include type so the tool can use appropriate metadata format
+  if ((definition.type === "appsSdk" || definition.type === "mcpApp") && definition._meta) {
+    server.widgetDefinitions.set(definition.name, {
+      ...definition._meta,
+      "mcp-use/widgetType": definition.type,
+    } as Record<string, unknown>);
   }
 
   // Determine resource URI and mimeType based on type

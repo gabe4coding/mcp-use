@@ -306,7 +306,7 @@ export type RemoteDomFramework = "react" | "webcomponents";
 /**
  * Base properties shared by all UI resource types
  */
-interface BaseUIResourceDefinition {
+export interface BaseUIResourceDefinition {
   /** Unique identifier for the resource */
   name: string;
   /** Human-readable title */

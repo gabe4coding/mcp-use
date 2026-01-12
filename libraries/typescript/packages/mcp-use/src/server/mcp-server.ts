@@ -263,25 +263,9 @@ class MCPServerClass<HasOAuth extends boolean = false> {
     ) => {
       // Auto-add widget metadata if widget config is set
       // This matches the metadata structure used by auto-registered widget tools
+      // Note: OpenAI-specific metadata is only added at runtime after checking widget type
       const widgetConfig = toolDefinition.widget;
       const widgetName = widgetConfig?.name;
-
-      if (widgetConfig && widgetName) {
-        const buildIdPart = self.buildId ? `-${self.buildId}` : "";
-        const outputTemplate = `ui://widget/${widgetName}${buildIdPart}.html`;
-
-        toolDefinition._meta = {
-          ...toolDefinition._meta,
-          "openai/outputTemplate": outputTemplate,
-          "openai/toolInvocation/invoking":
-            widgetConfig.invoking ?? `Loading ${widgetName}...`,
-          "openai/toolInvocation/invoked":
-            widgetConfig.invoked ?? `${widgetName} ready`,
-          "openai/widgetAccessible": widgetConfig.widgetAccessible ?? true,
-          "openai/resultCanProduceWidget":
-            widgetConfig.resultCanProduceWidget ?? true,
-        };
-      }
 
       let actualCallback = callback || toolDefinition.cb;
 
@@ -293,25 +277,45 @@ class MCPServerClass<HasOAuth extends boolean = false> {
 
           // Look up the widget definition and inject its metadata into the response
           const widgetDef = self.widgetDefinitions.get(widgetName);
+          const widgetType = widgetDef?.["mcp-use/widgetType"] as
+            | "appsSdk"
+            | "mcpApp"
+            | undefined;
 
           if (result && typeof result === "object") {
             // Generate unique URI for this invocation
             const randomId = Math.random().toString(36).substring(2, 15);
             const buildIdPart = self.buildId ? `-${self.buildId}` : "";
-            const uniqueUri = `ui://widget/${widgetName}${buildIdPart}-${randomId}.html`;
 
-            // Build response metadata
-            const responseMeta: Record<string, unknown> = {
-              ...(widgetDef || {}), // Include mcp-use/widget and other widget metadata
-              "openai/outputTemplate": uniqueUri,
-              "openai/toolInvocation/invoking":
-                widgetConfig.invoking ?? `Loading ${widgetName}...`,
-              "openai/toolInvocation/invoked":
-                widgetConfig.invoked ?? `${widgetName} ready`,
-              "openai/widgetAccessible": widgetConfig.widgetAccessible ?? true,
-              "openai/resultCanProduceWidget":
-                widgetConfig.resultCanProduceWidget ?? true,
-            };
+            // Build response metadata based on widget type
+            let responseMeta: Record<string, unknown>;
+
+            if (widgetType === "mcpApp") {
+              // MCP Apps standard: use ui.resourceUri (no OpenAI-specific fields)
+              const resourceUri = `ui://widget/${widgetName}.html`;
+
+              responseMeta = {
+                mimeType: "text/html;profile=mcp-app",
+                "mcp-use/props": (result as any)._meta?.["mcp-use/props"] || {},
+                ui: {
+                  resourceUri,
+                },
+              };
+            } else {
+              // Apps SDK (default): use OpenAI-specific metadata
+              const uniqueUri = `ui://widget/${widgetName}${buildIdPart}-${randomId}.html`;
+              responseMeta = {
+                ...(widgetDef || {}), // Include mcp-use/widget and other widget metadata
+                "openai/outputTemplate": uniqueUri,
+                "openai/toolInvocation/invoking":
+                  widgetConfig.invoking ?? `Loading ${widgetName}...`,
+                "openai/toolInvocation/invoked":
+                  widgetConfig.invoked ?? `${widgetName} ready`,
+                "openai/widgetAccessible": widgetConfig.widgetAccessible ?? true,
+                "openai/resultCanProduceWidget":
+                  widgetConfig.resultCanProduceWidget ?? true,
+              };
+            }
 
             // Set _meta on the result, merging with any existing _meta (e.g., from widget() helper)
             (result as any)._meta = {
