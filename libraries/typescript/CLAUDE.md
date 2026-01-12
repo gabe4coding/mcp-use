@@ -115,6 +115,29 @@ pnpm --filter mcp-use test:unit
 pnpm --filter mcp-use test:watch
 ```
 
+### Manual Testing with test_app
+
+To manually test changes to the packages, use the `test_app:<template_name>` scripts. These scripts:
+1. Build all packages with your changes
+2. Scaffold a new MCP app from a template
+3. Start the development server with the inspector
+
+```bash
+# Test with the starter template (default)
+pnpm test_app:starter
+
+# Test with the apps-sdk template
+pnpm test_app:apps-sdk
+
+# Test with the mcp-ui template
+pnpm test_app:mcp-ui
+
+# Test with the mcp-apps template (dual host support)
+pnpm test_app:mcp-apps
+```
+
+Once running, the mcp-use inspector opens at `http://localhost:3001` and automatically connects to the test server. Use this to interactively verify your changes work correctly.
+
 ## Common Tasks
 
 ### Adding a New Tool to MCPServer
