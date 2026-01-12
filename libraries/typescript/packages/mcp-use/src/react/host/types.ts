@@ -136,6 +136,12 @@ export interface WidgetHostAdaptor {
    * @returns Unsubscribe function
    */
   subscribe(callback: () => void): () => void;
+
+  /**
+   * Get the current revision number for useSyncExternalStore
+   * This should only change when state actually changes
+   */
+  getRevision(): number;
 }
 
 // Extend Window interface to include mcpUse globals

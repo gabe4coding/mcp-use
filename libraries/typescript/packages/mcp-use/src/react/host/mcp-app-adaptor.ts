@@ -118,6 +118,7 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
   };
   private listeners = new Set<() => void>();
   private initPromise: Promise<void> | null = null;
+  private revision = 0;
 
   constructor() {
     // Lazy initialization - actual connection happens when needed
@@ -183,6 +184,7 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
   }
 
   private notifyListeners(): void {
+    this.revision++;
     this.listeners.forEach((callback) => callback());
   }
 
@@ -394,6 +396,10 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
     return () => {
       this.listeners.delete(callback);
     };
+  }
+
+  getRevision(): number {
+    return this.revision;
   }
 
   /**

@@ -47,6 +47,7 @@ export class StandaloneAdaptor implements WidgetHostAdaptor {
   private parsedParams: StandaloneUrlParams | null = null;
   private widgetState: unknown | null = null;
   private listeners = new Set<() => void>();
+  private revision = 0;
 
   constructor() {
     this.parseUrlParams();
@@ -111,6 +112,7 @@ export class StandaloneAdaptor implements WidgetHostAdaptor {
   }
 
   private notifyListeners(): void {
+    this.revision++;
     this.listeners.forEach((callback) => callback());
   }
 
@@ -302,6 +304,10 @@ export class StandaloneAdaptor implements WidgetHostAdaptor {
     return () => {
       this.listeners.delete(callback);
     };
+  }
+
+  getRevision(): number {
+    return this.revision;
   }
 
   /**

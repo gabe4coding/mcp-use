@@ -141,13 +141,9 @@ export function useWidget<
   const [isAvailable, setIsAvailable] = useState(() => adaptor.isAvailable());
 
   // Use external store for reactive state updates from adaptor
-  const subscriptionCount = useSyncExternalStore(
+  const revision = useSyncExternalStore(
     adaptor.subscribe.bind(adaptor),
-    () => {
-      // Force re-render on any adaptor state change
-      // The actual values are retrieved via adaptor getters below
-      return Date.now();
-    }
+    adaptor.getRevision.bind(adaptor)
   );
 
   // Re-check availability after mount (for async script injection in apps-sdk)
@@ -272,7 +268,7 @@ export function useWidget<
   }, [isAvailable, toolResponseMetadata]);
 
   // Force re-render dependency (from useSyncExternalStore)
-  void subscriptionCount;
+  void revision;
 
   return {
     // Props and state (with defaults)

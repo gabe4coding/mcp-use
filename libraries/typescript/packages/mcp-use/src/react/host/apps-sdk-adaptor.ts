@@ -24,6 +24,7 @@ import type { WidgetHostAdaptor, HostType } from "./types.js";
 
 export class AppsSdkAdaptor implements WidgetHostAdaptor {
   readonly hostType: HostType = "apps-sdk";
+  private revision = 0;
 
   isAvailable(): boolean {
     return typeof window !== "undefined" && !!window.openai;
@@ -139,6 +140,7 @@ export class AppsSdkAdaptor implements WidgetHostAdaptor {
 
   subscribe(callback: () => void): () => void {
     const handler = () => {
+      this.revision++;
       callback();
     };
 
@@ -151,5 +153,9 @@ export class AppsSdkAdaptor implements WidgetHostAdaptor {
         window.removeEventListener(SET_GLOBALS_EVENT_TYPE, handler);
       }
     };
+  }
+
+  getRevision(): number {
+    return this.revision;
   }
 }
