@@ -8,8 +8,6 @@ import "../styles.css";
 export const widgetMetadata: WidgetMetadata = {
   description: "Task manager widget using MCP Apps standard",
   props: propSchema,
-  // Force MCP Apps host type
-  hostType: "mcp-app",
 };
 
 // Host type badge component
