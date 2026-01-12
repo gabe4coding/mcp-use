@@ -2,7 +2,7 @@
   "name": "mcp-use server",
   "type": "module",
   "version": "1.0.0",
-  "description": "MCP server with dual host support (OpenAI Apps SDK + MCP Apps)",
+  "description": "MCP server with MCP Apps standard widgets",
   "author": "",
   "license": "MIT",
   "keywords": [
@@ -14,8 +14,8 @@
     "widgets",
     "ai",
     "tools",
-    "apps-sdk",
-    "mcp-apps"
+    "mcp-apps",
+    "ext-apps"
   ],
   "main": "dist/index.js",
   "scripts": {

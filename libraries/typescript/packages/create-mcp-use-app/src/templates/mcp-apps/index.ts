@@ -1,10 +1,10 @@
 import { MCPServer } from "mcp-use/server";
 
-// Create an MCP server with dual host support (OpenAI Apps SDK + MCP Apps)
+// Create an MCP server for MCP Apps standard
 const server = new MCPServer({
   name: "mcp-apps-server",
   version: "1.0.0",
-  description: "MCP server with dual host support for OpenAI Apps SDK and MCP Apps",
+  description: "MCP server with MCP Apps standard widgets",
   baseUrl: process.env.MCP_URL || "http://localhost:3000",
 });
 
@@ -12,45 +12,38 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 /**
  * ════════════════════════════════════════════════════════════════════
- * Task Manager Widget (Apps SDK / MCP Apps compatible)
+ * Task Manager Widget (MCP Apps)
  * ════════════════════════════════════════════════════════════════════
  *
- * This widget demonstrates dual host support:
- * - Works with OpenAI ChatGPT via Apps SDK (text/html+skybridge)
- * - Works with MCP Apps compliant hosts (text/html;profile=mcp-app)
- * - Works standalone in Inspector/development mode
+ * This widget uses the MCP Apps standard:
+ * - MIME type: text/html;profile=mcp-app
+ * - Uses @modelcontextprotocol/ext-apps for host communication
+ * - Works with MCP Apps compliant hosts
  *
  * The widget is defined in resources/task-manager/widget.tsx and uses
- * the useWidget hook which automatically adapts to the host environment.
+ * the useWidget hook with MCP Apps adaptor.
  *
- * Resources registered:
- * - ui://widget/task-manager.html (Apps SDK)
- * - ui://widget/task-manager-mcp.html (MCP Apps)
+ * Resource: ui://widget/task-manager-mcp.html
  */
 
 /**
  * ════════════════════════════════════════════════════════════════════
  * Traditional MCP Tools
  * ════════════════════════════════════════════════════════════════════
- *
- * You can mix widgets with traditional MCP tools
  */
 
 server.tool(
   {
     name: "get-widget-info",
-    description: "Get information about available UI widgets and their host compatibility",
+    description: "Get information about available MCP Apps widgets",
   },
   async () => {
     const widgets = [
       {
         name: "task-manager",
-        type: "appsSdk",
-        hosts: ["apps-sdk", "mcp-app", "standalone"],
-        resources: {
-          appsSdk: "ui://widget/task-manager.html",
-          mcpApp: "ui://widget/task-manager-mcp.html",
-        },
+        type: "mcpApp",
+        mimeType: "text/html;profile=mcp-app",
+        resource: "ui://widget/task-manager-mcp.html",
         tool: "task-manager",
       },
     ];
@@ -60,22 +53,20 @@ server.tool(
         {
           type: "text",
           text:
-            `Available UI Widgets:\n\n${widgets
+            `Available MCP Apps Widgets:\n\n${widgets
               .map(
                 (w) =>
                   `📦 ${w.name}\n` +
                   `  Type: ${w.type}\n` +
+                  `  MIME: ${w.mimeType}\n` +
                   `  Tool: ${w.tool}\n` +
-                  `  Supported Hosts: ${w.hosts.join(", ")}\n` +
-                  `  Resources:\n` +
-                  `    - Apps SDK: ${w.resources.appsSdk}\n` +
-                  `    - MCP Apps: ${w.resources.mcpApp}\n`
+                  `  Resource: ${w.resource}\n`
               )
               .join("\n")}\n` +
-            `\nHost Types Explained:\n` +
-            `• apps-sdk: OpenAI ChatGPT native widgets\n` +
-            `• mcp-app: MCP Apps standard compliant hosts\n` +
-            `• standalone: Inspector, development, testing`,
+            `\nMCP Apps Standard:\n` +
+            `• Uses @modelcontextprotocol/ext-apps for communication\n` +
+            `• MIME type: text/html;profile=mcp-app\n` +
+            `• Compatible with MCP Apps compliant hosts`,
         },
       ],
     };
@@ -97,19 +88,8 @@ server.resource({
           {
             port: PORT,
             version: "1.0.0",
-            hostSupport: {
-              appsSdk: {
-                mimeType: "text/html+skybridge",
-                description: "OpenAI ChatGPT Apps SDK",
-              },
-              mcpApp: {
-                mimeType: "text/html;profile=mcp-app",
-                description: "MCP Apps standard",
-              },
-              standalone: {
-                description: "Inspector / development mode",
-              },
-            },
+            standard: "MCP Apps",
+            mimeType: "text/html;profile=mcp-app",
             widgets: {
               total: 1,
               list: ["task-manager"],
@@ -134,7 +114,7 @@ server.listen(PORT);
 // Display helpful startup message
 console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
-║         🎨 MCP Apps Server (Dual Host Support)                ║
+║              🎨 MCP Apps Standard Server                      ║
 ╚═══════════════════════════════════════════════════════════════╝
 
 Server is running on port ${PORT}
@@ -148,29 +128,14 @@ Server is running on port ${PORT}
 
    📦 task-manager
       Tool:      task-manager
-      Resources:
-        - Apps SDK: ui://widget/task-manager.html
-        - MCP Apps: ui://widget/task-manager-mcp.html
+      Resource:  ui://widget/task-manager-mcp.html
+      MIME:      text/html;profile=mcp-app
       Browser:   http://localhost:${PORT}/mcp-use/widgets/task-manager
 
-🌐 Supported Host Types:
-
-   1️⃣  OpenAI Apps SDK (apps-sdk)
-      • Runs natively in ChatGPT
-      • Uses window.openai API
-      • MIME: text/html+skybridge
-
-   2️⃣  MCP Apps Standard (mcp-app)
-      • Runs in MCP Apps compliant hosts
-      • Uses @modelcontextprotocol/ext-apps
-      • MIME: text/html;profile=mcp-app
-
-   3️⃣  Standalone (standalone)
-      • Inspector and development mode
-      • Direct HTTP to MCP server
-      • URL query parameters for props
-
-📝 Widget automatically detects and adapts to the host environment!
+📋 MCP Apps Standard:
+   • Uses @modelcontextprotocol/ext-apps
+   • MIME type: text/html;profile=mcp-app
+   • Compatible with MCP Apps compliant hosts
 
 💡 Tip: Open the Inspector UI to test widgets interactively!
 `);

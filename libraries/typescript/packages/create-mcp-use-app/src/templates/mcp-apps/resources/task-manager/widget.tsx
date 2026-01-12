@@ -6,40 +6,18 @@ import "../styles.css";
 
 // Widget metadata for registration
 export const widgetMetadata: WidgetMetadata = {
-  description: "Task manager widget demonstrating dual host support (Apps SDK + MCP Apps)",
+  description: "Task manager widget using MCP Apps standard",
   props: propSchema,
+  // Force MCP Apps host type
+  hostType: "mcp-app",
 };
 
 // Host type badge component
 const HostBadge: React.FC<{ hostType: string }> = ({ hostType }) => {
-  const hostInfo = {
-    "apps-sdk": {
-      label: "OpenAI Apps SDK",
-      description: "Running in ChatGPT",
-      className: "host-apps-sdk",
-    },
-    "mcp-app": {
-      label: "MCP Apps",
-      description: "Running in MCP Apps host",
-      className: "host-mcp-app",
-    },
-    standalone: {
-      label: "Standalone",
-      description: "Running in Inspector/dev mode",
-      className: "host-standalone",
-    },
-  }[hostType] || {
-    label: "Unknown",
-    description: "Unknown host",
-    className: "bg-gray-500",
-  };
-
   return (
-    <div
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium ${hostInfo.className}`}
-    >
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium host-mcp-app">
       <span className="w-2 h-2 rounded-full bg-white/50 animate-pulse" />
-      <span>{hostInfo.label}</span>
+      <span>MCP Apps</span>
     </div>
   );
 };
@@ -93,13 +71,13 @@ const TaskItem: React.FC<{
 
 // Main Task Manager component
 const TaskManager: React.FC = () => {
-  const { props, hostType, callTool, sendMessage, theme } = useWidget<TaskManagerProps>();
+  const { props, callTool, sendMessage, theme } = useWidget<TaskManagerProps>();
 
   // Default tasks if none provided
   const defaultTasks: Task[] = [
-    { id: "1", title: "Learn about MCP Apps", completed: false, priority: "high" },
-    { id: "2", title: "Build a widget", completed: false, priority: "medium" },
-    { id: "3", title: "Test dual host support", completed: true, priority: "low" },
+    { id: "1", title: "Learn about MCP Apps standard", completed: false, priority: "high" },
+    { id: "2", title: "Build a widget with ext-apps", completed: false, priority: "medium" },
+    { id: "3", title: "Test in MCP Apps host", completed: true, priority: "low" },
   ];
 
   const [tasks, setTasks] = useState<Task[]>(props?.initialTasks || defaultTasks);
@@ -143,7 +121,7 @@ const TaskManager: React.FC = () => {
 
   const handleCallTool = async () => {
     try {
-      addLog("Calling get-widget-info tool...");
+      addLog("Calling get-widget-info tool via MCP Apps...");
       const result = await callTool("get-widget-info", {});
       addLog(`Tool returned: ${result.content.length} item(s)`);
     } catch (error) {
@@ -157,7 +135,7 @@ const TaskManager: React.FC = () => {
     const message = `Task summary: ${completedCount}/${totalCount} tasks completed`;
 
     try {
-      addLog(`Sending message: "${message}"`);
+      addLog(`Sending message via MCP Apps: "${message}"`);
       await sendMessage(message);
       addLog("Message sent successfully");
     } catch (error) {
@@ -180,7 +158,7 @@ const TaskManager: React.FC = () => {
               {completedCount}/{tasks.length} tasks completed
             </p>
           </div>
-          <HostBadge hostType={hostType} />
+          <HostBadge hostType="mcp-app" />
         </div>
 
         {/* Add Task Form */}
@@ -234,11 +212,10 @@ const TaskManager: React.FC = () => {
         {/* Host Actions */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Host Actions (via useWidget)
+            MCP Apps Actions
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            These actions use the unified useWidget API which automatically adapts to the host
-            environment ({hostType}).
+            These actions use @modelcontextprotocol/ext-apps for communication with the host.
           </p>
           <div className="flex gap-3">
             <button
@@ -251,7 +228,7 @@ const TaskManager: React.FC = () => {
               onClick={handleSendMessage}
               className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
             >
-              Send Summary
+              Send Message
             </button>
           </div>
         </div>
@@ -271,10 +248,7 @@ const TaskManager: React.FC = () => {
         {/* Host Info */}
         <div className="text-center text-xs text-gray-400 dark:text-gray-500">
           <p>
-            Widget adapts automatically to:{" "}
-            <span className="font-medium">OpenAI Apps SDK</span>,{" "}
-            <span className="font-medium">MCP Apps</span>, or{" "}
-            <span className="font-medium">Standalone</span> mode
+            MCP Apps Standard | MIME: text/html;profile=mcp-app | @modelcontextprotocol/ext-apps
           </p>
         </div>
       </div>

@@ -1,22 +1,21 @@
 # MCP Apps Server
 
-An MCP server with dual host support for both OpenAI Apps SDK and MCP Apps standard.
+An MCP server with widgets using the MCP Apps standard.
 
 ## Features
 
-- **Dual Host Support**: Works with OpenAI ChatGPT (Apps SDK) and MCP Apps compliant hosts
-- **Automatic Adaptation**: Widgets detect and adapt to the host environment automatically
-- **Unified API**: Single `useWidget` hook works across all host types
+- **MCP Apps Standard**: Uses `text/html;profile=mcp-app` MIME type
+- **@modelcontextprotocol/ext-apps**: Official client library for MCP Apps hosts
 - **React Widgets**: Interactive UI components built with React
 - **TypeScript Support**: Full type safety with Zod schema validation
 
-## Supported Host Types
+## MCP Apps Standard
 
-| Host Type | Environment | MIME Type |
-|-----------|-------------|-----------|
-| `apps-sdk` | OpenAI ChatGPT | `text/html+skybridge` |
-| `mcp-app` | MCP Apps compliant hosts | `text/html;profile=mcp-app` |
-| `standalone` | Inspector / development | N/A |
+| Property | Value |
+|----------|-------|
+| MIME Type | `text/html;profile=mcp-app` |
+| Communication | `@modelcontextprotocol/ext-apps` |
+| Transport | PostMessage to parent window |
 
 ## Getting Started
 
@@ -49,7 +48,7 @@ npm start
 
 ### The useWidget Hook
 
-The `useWidget` hook from `mcp-use/react` provides a unified API that automatically adapts to the host environment:
+The `useWidget` hook from `mcp-use/react` provides the MCP Apps API:
 
 ```typescript
 import { useWidget } from "mcp-use/react";
@@ -57,31 +56,25 @@ import { useWidget } from "mcp-use/react";
 function MyWidget() {
   const {
     props,        // Widget props from tool invocation
-    hostType,     // 'apps-sdk' | 'mcp-app' | 'standalone'
     theme,        // 'light' | 'dark'
-    callTool,     // Call MCP tools
-    sendMessage,  // Send followup messages
+    callTool,     // Call MCP tools via host
+    sendMessage,  // Send messages via host
     openLink,     // Open external links
   } = useWidget<MyWidgetProps>();
 
-  return <div>Host: {hostType}</div>;
+  return <div>MCP Apps Widget</div>;
 }
 ```
 
-### Host Detection
+### MCP Apps Communication
 
-The widget automatically detects the host environment:
+The widget uses `@modelcontextprotocol/ext-apps` for host communication:
 
-1. **OpenAI Apps SDK** (`apps-sdk`): Detected when `window.openai` is available
-2. **MCP Apps** (`mcp-app`): Detected when running in an iframe without `window.openai`
-3. **Standalone** (`standalone`): When neither of the above (Inspector, direct browser access)
-
-### Dual Resource Registration
-
-Each widget is automatically registered with two resource URIs:
-
-- **Apps SDK**: `ui://widget/{name}.html` with `text/html+skybridge`
-- **MCP Apps**: `ui://widget/{name}-mcp.html` with `text/html;profile=mcp-app`
+| Method | MCP Apps API |
+|--------|--------------|
+| `callTool(name, args)` | `app.callServerTool({ name, arguments })` |
+| `sendMessage(text)` | `app.sendMessage({ content, role })` |
+| `openLink(href)` | `app.openLink({ url })` |
 
 ## Creating Widgets
 
@@ -94,17 +87,17 @@ import { McpUseProvider, useWidget, type WidgetMetadata } from "mcp-use/react";
 import { propSchema, type MyWidgetProps } from "./types";
 
 export const widgetMetadata: WidgetMetadata = {
-  description: "My custom widget",
+  description: "My MCP Apps widget",
   props: propSchema,
+  hostType: "mcp-app",
 };
 
 function MyWidget() {
-  const { props, hostType, callTool } = useWidget<MyWidgetProps>();
+  const { props, callTool } = useWidget<MyWidgetProps>();
 
   return (
     <McpUseProvider autoSize>
       <div>
-        <h1>Running on: {hostType}</h1>
         <p>Props: {JSON.stringify(props)}</p>
         <button onClick={() => callTool("my-tool", {})}>
           Call Tool
@@ -135,50 +128,7 @@ export type MyWidgetProps = z.infer<typeof propSchema>;
 
 Widgets in the `resources/` folder are automatically:
 - Registered as MCP tools
-- Registered as Apps SDK resources (`text/html+skybridge`)
-- Registered as MCP Apps resources (`text/html;profile=mcp-app`)
-
-## API Reference
-
-### useWidget Hook
-
-```typescript
-interface UseWidgetResult<TProps> {
-  // State
-  props: TProps | undefined;
-  hostType: 'apps-sdk' | 'mcp-app' | 'standalone';
-  theme: 'light' | 'dark';
-  displayMode: 'inline' | 'fullscreen' | 'pip';
-  locale: string;
-  maxHeight: number;
-  safeArea: SafeArea;
-  userAgent: UserAgent;
-
-  // Tool output (for processing tool results)
-  toolOutput: unknown | null;
-  toolResponseMetadata: unknown | null;
-  widgetState: unknown | null;
-
-  // Actions
-  callTool: (name: string, args: Record<string, unknown>) => Promise<CallToolResponse>;
-  sendMessage: (message: string) => Promise<void>;
-  openLink: (href: string) => void;
-  requestDisplayMode: (mode: DisplayMode) => Promise<{ mode: DisplayMode }>;
-  setWidgetState: <T>(state: T) => Promise<void>;
-
-  // URLs
-  mcp_url: string;
-  public_url: string;
-}
-```
-
-### Host-Specific Behavior
-
-| Method | Apps SDK | MCP Apps | Standalone |
-|--------|----------|----------|------------|
-| `callTool` | `window.openai.callTool()` | `app.callServerTool()` | HTTP POST |
-| `sendMessage` | `window.openai.sendFollowUpMessage()` | `app.sendMessage()` | Console log |
-| `openLink` | `window.openai.openExternal()` | `app.openLink()` | `window.open()` |
+- Registered with `text/html;profile=mcp-app` MIME type
 
 ## Testing
 
@@ -200,16 +150,13 @@ const result = await client.callTool('task-manager', {
   initialTasks: [{ id: '1', title: 'Test', completed: false, priority: 'high' }],
 });
 
-// Access as Apps SDK resource
-const appsSdkResource = await client.readResource('ui://widget/task-manager.html');
-
-// Access as MCP Apps resource
-const mcpAppResource = await client.readResource('ui://widget/task-manager-mcp.html');
+// Access as resource
+const resource = await client.readResource('ui://widget/task-manager-mcp.html');
 ```
 
 ## Dependencies
 
-- `mcp-use`: Core MCP framework with dual host support
+- `mcp-use`: Core MCP framework
 - `@modelcontextprotocol/ext-apps`: MCP Apps standard client library
 - `react`: UI framework
 - `zod`: Schema validation
@@ -217,8 +164,5 @@ const mcpAppResource = await client.readResource('ui://widget/task-manager-mcp.h
 ## Learn More
 
 - [MCP Documentation](https://modelcontextprotocol.io)
-- [OpenAI Apps SDK](https://developers.openai.com/apps-sdk)
-- [MCP Apps Standard (SEP-1865)](https://github.com/modelcontextprotocol/specification)
+- [MCP Apps Standard](https://github.com/modelcontextprotocol/specification)
 - [mcp-use Documentation](https://github.com/mcp-use/mcp-use)
-
-Happy building! 🚀

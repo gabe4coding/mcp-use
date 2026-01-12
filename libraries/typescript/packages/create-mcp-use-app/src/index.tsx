@@ -1006,7 +1006,7 @@ async function copyTemplate(
       '💡 Tip: Use "starter" template for a comprehensive MCP server with all features'
     );
     console.log(
-      '💡 Tip: Use "mcp-apps" template for a MCP server with dual host support (Apps SDK + MCP Apps)'
+      '💡 Tip: Use "mcp-apps" template for a MCP server with MCP Apps standard widgets'
     );
     console.log(
       '💡 Tip: Use "apps-sdk" template for a MCP server with OpenAI Apps SDK integration'
