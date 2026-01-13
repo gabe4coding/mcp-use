@@ -12,7 +12,10 @@ export type Task = z.infer<typeof taskSchema>;
 
 // Widget props schema
 export const propSchema = z.object({
-  initialTasks: z.array(taskSchema).optional().describe("Initial tasks to display"),
+  initialTasks: z
+    .array(taskSchema)
+    .optional()
+    .describe("Initial tasks to display"),
   title: z.string().optional().describe("Widget title"),
 });
 

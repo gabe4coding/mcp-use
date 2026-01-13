@@ -44,14 +44,29 @@ export { StandaloneAdaptor } from "./standalone-adaptor.js";
  *
  * @returns The detected host type
  */
+// Valid host type values for validation
+const VALID_HOST_TYPES: readonly HostType[] = [
+  "standalone",
+  "apps-sdk",
+  "mcp-app",
+] as const;
+
+function isValidHostType(value: unknown): value is HostType {
+  return (
+    typeof value === "string" && VALID_HOST_TYPES.includes(value as HostType)
+  );
+}
+
 export function detectHostType(): HostType {
   if (typeof window === "undefined") {
     return "standalone";
   }
 
   // Check for explicit override (injected by server in HTML template)
-  if (window.mcpUse?.hostType) {
-    return window.mcpUse.hostType;
+  // Validate against allowed values to prevent arbitrary string injection
+  const explicitHostType = window.mcpUse?.hostType;
+  if (isValidHostType(explicitHostType)) {
+    return explicitHostType;
   }
 
   // Check for OpenAI Apps SDK (window.openai exists)

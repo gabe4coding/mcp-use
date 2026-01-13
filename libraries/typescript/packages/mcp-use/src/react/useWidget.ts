@@ -209,8 +209,9 @@ export function useWidget<
   const [localWidgetState, setLocalWidgetState] = useState<TState | null>(null);
 
   // Sync widget state from adaptor
+  // Allow null to propagate (host explicitly cleared state)
   useEffect(() => {
-    if (widgetState !== undefined && widgetState !== null) {
+    if (widgetState !== undefined) {
       setLocalWidgetState(widgetState);
     }
   }, [widgetState]);
@@ -353,11 +354,12 @@ export function useWidgetState<TState extends UnknownObject>(
   >();
 
   // Initialize with default if provided and state is null
+  // Include all dependencies so default is applied when host becomes available async
   useEffect(() => {
     if (state === null && defaultState !== undefined && isAvailable) {
-      setState(defaultState);
+      void setState(defaultState);
     }
-  }, []); // Only run once on mount
+  }, [state, defaultState, isAvailable, setState]);
 
   return [state, setState] as const;
 }

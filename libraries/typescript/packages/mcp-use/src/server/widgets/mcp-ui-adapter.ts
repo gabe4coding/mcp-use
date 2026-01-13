@@ -25,6 +25,17 @@ import type {
 export type WidgetHostType = "apps-sdk" | "mcp-app" | "standalone";
 
 /**
+ * Internal type for text-based resource data
+ * Matches UIResourceContent["resource"] with text content
+ */
+interface TextResourceData {
+  uri: string;
+  mimeType: string;
+  text: string;
+  _meta?: Record<string, unknown>;
+}
+
+/**
  * Configuration for building widget URLs
  */
 export interface UrlConfig {
@@ -192,16 +203,20 @@ export function createAppsSdkResource(
   let processedHtml = htmlTemplate;
 
   // Inject host type if specified (for MCP Apps mode)
+  // Use JSON.stringify to escape values and prevent XSS/injection
   if (hostType) {
-    const hostTypeScript = `<script>window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = "${hostType}";</script>`;
+    const hostTypeScript = `<script>window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = ${JSON.stringify(hostType)};</script>`;
 
     // Try to inject after <head> tag
     if (processedHtml.includes("<head>")) {
-      processedHtml = processedHtml.replace("<head>", `<head>${hostTypeScript}`);
-    } else if (processedHtml.includes("<head ")) {
-      // Handle <head with attributes
       processedHtml = processedHtml.replace(
-        /<head[^>]*>/i,
+        "<head>",
+        `<head>${hostTypeScript}`
+      );
+    } else if (processedHtml.includes("<head ")) {
+      // Handle <head with attributes - use \b word boundary to prevent ReDoS
+      processedHtml = processedHtml.replace(
+        /<head\b[^>]*>/i,
         (match) => `${match}${hostTypeScript}`
       );
     } else {
@@ -210,7 +225,7 @@ export function createAppsSdkResource(
     }
   }
 
-  const resource: any = {
+  const resource: TextResourceData = {
     uri,
     mimeType: "text/html+skybridge",
     text: processedHtml,
@@ -248,16 +263,17 @@ export function createMcpAppResource(
   let processedHtml = htmlTemplate;
 
   // Inject host type if specified
+  // Use JSON.stringify to escape values and prevent XSS/injection
   const effectiveHostType = hostType || "mcp-app";
-  const hostTypeScript = `<script>window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = "${effectiveHostType}";</script>`;
+  const hostTypeScript = `<script>window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = ${JSON.stringify(effectiveHostType)};</script>`;
 
   // Try to inject after <head> tag
   if (processedHtml.includes("<head>")) {
     processedHtml = processedHtml.replace("<head>", `<head>${hostTypeScript}`);
   } else if (processedHtml.includes("<head ")) {
-    // Handle <head with attributes
+    // Handle <head with attributes - use \b word boundary to prevent ReDoS
     processedHtml = processedHtml.replace(
-      /<head[^>]*>/i,
+      /<head\b[^>]*>/i,
       (match) => `${match}${hostTypeScript}`
     );
   } else {
@@ -265,7 +281,7 @@ export function createMcpAppResource(
     processedHtml = hostTypeScript + processedHtml;
   }
 
-  const resource: any = {
+  const resource: TextResourceData = {
     uri,
     mimeType: "text/html;profile=mcp-app",
     text: processedHtml,
@@ -309,7 +325,8 @@ export async function createUIResourceFromDefinition(
   let uri: `ui://${string}`;
 
   if (definition.type === "appsSdk") {
-    uri = `ui://widget/${definition.name}${buildIdPart}.html` as `ui://${string}`;
+    uri =
+      `ui://widget/${definition.name}${buildIdPart}.html` as `ui://${string}`;
   } else if (definition.type === "mcpApp") {
     uri = `ui://widget/${definition.name}.html` as `ui://${string}`;
   } else {

@@ -29,7 +29,8 @@ const TaskItem: React.FC<{
 }> = ({ task, onToggle, onDelete }) => {
   const priorityColors = {
     high: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-    medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    medium:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
     low: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   };
 
@@ -47,7 +48,9 @@ const TaskItem: React.FC<{
       >
         {task.title}
       </span>
-      <span className={`px-2 py-0.5 text-xs rounded-full ${priorityColors[task.priority]}`}>
+      <span
+        className={`px-2 py-0.5 text-xs rounded-full ${priorityColors[task.priority]}`}
+      >
         {task.priority}
       </span>
       <button
@@ -55,7 +58,12 @@ const TaskItem: React.FC<{
         className="p-1 text-gray-400 hover:text-red-500 transition-colors"
         aria-label={`Delete ${task.title}`}
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -70,26 +78,50 @@ const TaskItem: React.FC<{
 
 // Main Task Manager component
 const TaskManager: React.FC = () => {
-  const { props, callTool, sendFollowUpMessage, theme } = useWidget<TaskManagerProps>();
+  const { props, callTool, sendFollowUpMessage, theme } =
+    useWidget<TaskManagerProps>();
 
   // Default tasks if none provided
   const defaultTasks: Task[] = [
-    { id: "1", title: "Learn about MCP Apps standard", completed: false, priority: "high" },
-    { id: "2", title: "Build a widget with ext-apps", completed: false, priority: "medium" },
-    { id: "3", title: "Test in MCP Apps host", completed: true, priority: "low" },
+    {
+      id: "1",
+      title: "Learn about MCP Apps standard",
+      completed: false,
+      priority: "high",
+    },
+    {
+      id: "2",
+      title: "Build a widget with ext-apps",
+      completed: false,
+      priority: "medium",
+    },
+    {
+      id: "3",
+      title: "Test in MCP Apps host",
+      completed: true,
+      priority: "low",
+    },
   ];
 
-  const [tasks, setTasks] = useState<Task[]>(props?.initialTasks || defaultTasks);
+  const [tasks, setTasks] = useState<Task[]>(
+    props?.initialTasks || defaultTasks
+  );
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskPriority, setNewTaskPriority] = useState<Task["priority"]>("medium");
+  const [newTaskPriority, setNewTaskPriority] =
+    useState<Task["priority"]>("medium");
   const [actionLog, setActionLog] = useState<string[]>([]);
 
   const addLog = (message: string) => {
-    setActionLog((prev) => [...prev.slice(-4), `[${new Date().toLocaleTimeString()}] ${message}`]);
+    setActionLog((prev) => [
+      ...prev.slice(-4),
+      `[${new Date().toLocaleTimeString()}] ${message}`,
+    ]);
   };
 
   const handleToggle = (id: string) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+    setTasks(
+      tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
     const task = tasks.find((t) => t.id === id);
     if (task) {
       addLog(`Toggled: ${task.title}`);
@@ -145,7 +177,9 @@ const TaskManager: React.FC = () => {
   const completedCount = tasks.filter((t) => t.completed).length;
 
   return (
-    <div className={`min-h-screen p-6 ${theme === "dark" ? "dark bg-gray-900" : "bg-gray-100"}`}>
+    <div
+      className={`min-h-screen p-6 ${theme === "dark" ? "dark bg-gray-900" : "bg-gray-100"}`}
+    >
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -173,7 +207,9 @@ const TaskManager: React.FC = () => {
             />
             <select
               value={newTaskPriority}
-              onChange={(e) => setNewTaskPriority(e.target.value as Task["priority"])}
+              onChange={(e) =>
+                setNewTaskPriority(e.target.value as Task["priority"])
+              }
               className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               aria-label="Task priority"
             >
@@ -214,7 +250,8 @@ const TaskManager: React.FC = () => {
             MCP Apps Actions
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            These actions use @modelcontextprotocol/ext-apps for communication with the host.
+            These actions use @modelcontextprotocol/ext-apps for communication
+            with the host.
           </p>
           <div className="flex gap-3">
             <button
@@ -235,7 +272,9 @@ const TaskManager: React.FC = () => {
         {/* Action Log */}
         {actionLog.length > 0 && (
           <div className="bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-700">
-            <h3 className="text-sm font-medium text-gray-400 mb-2">Action Log</h3>
+            <h3 className="text-sm font-medium text-gray-400 mb-2">
+              Action Log
+            </h3>
             <div className="space-y-1 font-mono text-xs text-green-400">
               {actionLog.map((log, i) => (
                 <div key={i}>{log}</div>
@@ -247,7 +286,8 @@ const TaskManager: React.FC = () => {
         {/* Host Info */}
         <div className="text-center text-xs text-gray-400 dark:text-gray-500">
           <p>
-            MCP Apps Standard | MIME: text/html;profile=mcp-app | @modelcontextprotocol/ext-apps
+            MCP Apps Standard | MIME: text/html;profile=mcp-app |
+            @modelcontextprotocol/ext-apps
           </p>
         </div>
       </div>

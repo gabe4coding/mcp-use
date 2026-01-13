@@ -8,7 +8,9 @@ const server = new MCPServer({
   baseUrl: process.env.MCP_URL || "http://localhost:3000",
 });
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+// Parse PORT with validation - fallback to 3000 if invalid
+const parsedPort = process.env.PORT ? parseInt(process.env.PORT, 10) : NaN;
+const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
 
 /**
  * ════════════════════════════════════════════════════════════════════

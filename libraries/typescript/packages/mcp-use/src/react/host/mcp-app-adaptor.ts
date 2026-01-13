@@ -179,6 +179,8 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
     } catch (error) {
       console.error("[McpAppAdaptor] Failed to initialize:", error);
       this.state.isConnected = false;
+      // Reset initPromise so retry is possible on subsequent calls
+      this.initPromise = null;
       throw error;
     }
   }
@@ -202,7 +204,10 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
   // ─────────────────────────────────────────────────────────────────
 
   getToolInput<T>(): T | undefined {
-    return this.state.toolInput as T | undefined;
+    // Explicitly map null to undefined to match interface contract
+    return this.state.toolInput != null
+      ? (this.state.toolInput as T)
+      : undefined;
   }
 
   getToolOutput<T>(): T | null {
@@ -254,7 +259,7 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
 
     return {
       device: {
-        type: platform === "web" ? "desktop" : (platform as any) ?? "unknown",
+        type: platform === "web" ? "desktop" : ((platform as any) ?? "unknown"),
       },
       capabilities: {
         hover: caps?.hover ?? true,
@@ -305,14 +310,12 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
       })
       .catch((error) => {
         console.error("[McpAppAdaptor] Failed to open link:", error);
-        // Fallback to window.open
-        window.open(href, "_blank");
+        // Fallback to window.open with noopener/noreferrer for security
+        window.open(href, "_blank", "noopener,noreferrer");
       });
   }
 
-  async requestDisplayMode(
-    mode: DisplayMode
-  ): Promise<{ mode: DisplayMode }> {
+  async requestDisplayMode(mode: DisplayMode): Promise<{ mode: DisplayMode }> {
     await this.initialize();
     if (!this.app) {
       throw new Error("MCP App not initialized");
@@ -389,7 +392,10 @@ export class McpAppAdaptor implements WidgetHostAdaptor {
     // Trigger initialization on first subscriber
     if (this.listeners.size === 1 && this.isAvailable()) {
       this.initialize().catch((error) => {
-        console.error("[McpAppAdaptor] Background initialization failed:", error);
+        console.error(
+          "[McpAppAdaptor] Background initialization failed:",
+          error
+        );
       });
     }
 

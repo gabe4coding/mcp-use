@@ -311,7 +311,8 @@ class MCPServerClass<HasOAuth extends boolean = false> {
                   widgetConfig.invoking ?? `Loading ${widgetName}...`,
                 "openai/toolInvocation/invoked":
                   widgetConfig.invoked ?? `${widgetName} ready`,
-                "openai/widgetAccessible": widgetConfig.widgetAccessible ?? true,
+                "openai/widgetAccessible":
+                  widgetConfig.widgetAccessible ?? true,
                 "openai/resultCanProduceWidget":
                   widgetConfig.resultCanProduceWidget ?? true,
               };

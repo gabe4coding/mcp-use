@@ -89,7 +89,7 @@ import { propSchema, type MyWidgetProps } from "./types";
 export const widgetMetadata: WidgetMetadata = {
   description: "My MCP Apps widget",
   props: propSchema,
-  hostType: "mcp-app",
+  type: "mcpApp", // Use "mcpApp" for MCP Apps standard widgets
 };
 
 function MyWidget() {

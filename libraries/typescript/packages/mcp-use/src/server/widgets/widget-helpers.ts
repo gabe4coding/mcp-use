@@ -293,10 +293,11 @@ export function processWidgetHtml(
     } while (prevHtmlWithoutComments !== htmlWithoutComments);
 
     // Try to replace existing base tag (only if not in comments)
-    const baseTagRegex = /<base\s+[^>]*\/?>/i;
+    // Use \b word boundary to prevent ReDoS on malicious input
+    const baseTagRegex = /<base\b[^>]*>/i;
     if (baseTagRegex.test(htmlWithoutComments)) {
       // Find and replace the actual base tag in the original HTML
-      const actualBaseTagMatch = processedHtml.match(/<base\s+[^>]*\/?>/i);
+      const actualBaseTagMatch = processedHtml.match(/<base\b[^>]*>/i);
       if (actualBaseTagMatch) {
         processedHtml = processedHtml.replace(
           actualBaseTagMatch[0],
@@ -305,7 +306,8 @@ export function processWidgetHtml(
       }
     } else {
       // Inject base tag in head if it doesn't exist
-      const headTagRegex = /<head[^>]*>/i;
+      // Use \b word boundary to prevent ReDoS
+      const headTagRegex = /<head\b[^>]*>/i;
       if (headTagRegex.test(processedHtml)) {
         processedHtml = processedHtml.replace(
           headTagRegex,
@@ -316,8 +318,9 @@ export function processWidgetHtml(
   }
 
   // For mcp-app, remove any existing base tags to avoid CSP violations
+  // Use \b word boundary to prevent ReDoS on malicious input
   if (hostType === "mcp-app") {
-    processedHtml = processedHtml.replace(/<base\s+[^>]*\/?>/gi, "");
+    processedHtml = processedHtml.replace(/<base\b[^>]*>/gi, "");
   }
 
   if (baseUrl && processedHtml) {
@@ -333,14 +336,23 @@ export function processWidgetHtml(
 
     // Build the initialization script
     // Include host type if specified (for MCP Apps or Apps SDK explicit mode)
+    // Use JSON.stringify to escape values and prevent XSS/injection
     const hostTypeInit = hostType
-      ? `window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = "${hostType}";`
+      ? `window.mcpUse = window.mcpUse || {}; window.mcpUse.hostType = ${JSON.stringify(hostType)};`
       : "";
 
+    // Pre-compute escaped URLs for injection safety
+    const widgetBaseUrl = JSON.stringify(
+      `${baseUrl}/mcp-use/widgets/${widgetName}/`
+    );
+    const publicUrl = JSON.stringify(`${baseUrl}/mcp-use/public`);
+
     // Add window.__getFile, window.__mcpPublicUrl, and optional host type to head
+    // Use \b word boundary to prevent ReDoS
     processedHtml = processedHtml.replace(
-      /<head[^>]*>/i,
-      `<head>\n    <script>${hostTypeInit}window.__getFile = (filename) => { return "${baseUrl}/mcp-use/widgets/${widgetName}/"+filename }; window.__mcpPublicUrl = "${baseUrl}/mcp-use/public";</script>`
+      /<head\b[^>]*>/i,
+      (match) =>
+        `${match}\n    <script>${hostTypeInit}window.__getFile = (filename) => ${widgetBaseUrl} + filename; window.__mcpPublicUrl = ${publicUrl};</script>`
     );
   }
 
@@ -742,7 +754,12 @@ export async function registerWidgetFromTemplate(
   // Process HTML with base URL injection and path conversion
   // Pass hostType for mcpApp widgets to avoid CSP base-uri violations
   const hostType = metadata.type === "mcpApp" ? "mcp-app" : undefined;
-  html = processWidgetHtml(html, widgetName, serverConfig.serverBaseUrl, hostType);
+  html = processWidgetHtml(
+    html,
+    widgetName,
+    serverConfig.serverBaseUrl,
+    hostType
+  );
 
   // Ensure metadata has proper fallbacks
   const processedMetadata = ensureWidgetMetadata(metadata, widgetName);

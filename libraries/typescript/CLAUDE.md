@@ -126,13 +126,10 @@ To manually test changes to the packages, use the `test_app:<template_name>` scr
 # Test with the starter template (default)
 pnpm test_app:starter
 
-# Test with the apps-sdk template
+# Test with the apps-sdk template (OpenAI Apps SDK widgets)
 pnpm test_app:apps-sdk
 
-# Test with the mcp-ui template
-pnpm test_app:mcp-ui
-
-# Test with the mcp-apps template (dual host support)
+# Test with the mcp-apps template (MCP Apps standard widgets)
 pnpm test_app:mcp-apps
 ```
 

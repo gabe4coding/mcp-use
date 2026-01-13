@@ -170,11 +170,10 @@ export class StandaloneAdaptor implements WidgetHostAdaptor {
 
   getTheme(): Theme {
     // Check for theme preference in system
-    if (typeof window !== "undefined") {
-      const prefersDark = window.matchMedia?.(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      return prefersDark ? "dark" : "light";
+    // Guard against matchMedia not existing or returning undefined
+    if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      return mq?.matches ? "dark" : "light";
     }
     return "light";
   }
@@ -276,9 +275,7 @@ export class StandaloneAdaptor implements WidgetHostAdaptor {
     }
   }
 
-  async requestDisplayMode(
-    mode: DisplayMode
-  ): Promise<{ mode: DisplayMode }> {
+  async requestDisplayMode(mode: DisplayMode): Promise<{ mode: DisplayMode }> {
     console.warn(
       "[StandaloneAdaptor] requestDisplayMode not available in standalone mode"
     );

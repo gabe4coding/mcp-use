@@ -97,7 +97,10 @@ export function uiResourceRegistration<T extends UIResourceServer>(
 
   // Store widget definition for use by tools with widget config
   // Include type so the tool can use appropriate metadata format
-  if ((definition.type === "appsSdk" || definition.type === "mcpApp") && definition._meta) {
+  if (
+    (definition.type === "appsSdk" || definition.type === "mcpApp") &&
+    definition._meta
+  ) {
     server.widgetDefinitions.set(definition.name, {
       ...definition._meta,
       "mcp-use/widgetType": definition.type,
@@ -126,11 +129,7 @@ export function uiResourceRegistration<T extends UIResourceServer>(
       mimeType = "text/html+skybridge";
       break;
     case "mcpApp":
-      resourceUri = generateWidgetUri(
-        definition.name,
-        undefined,
-        ".html"
-      );
+      resourceUri = generateWidgetUri(definition.name, undefined, ".html");
       mimeType = "text/html;profile=mcp-app";
       break;
     default:
@@ -223,7 +222,7 @@ export function uiResourceRegistration<T extends UIResourceServer>(
     const mcpAppMimeType = "text/html;profile=mcp-app";
 
     // Build MCP App specific metadata with CSP
-    // Per MCP Apps spec: use connectDomains and resourceDomains for CSP allowlisting
+    // Use standard CSP directive names per McpAppMetadata interface
     const serverOrigin =
       serverConfig.serverBaseUrl ||
       `http://${serverConfig.serverHost}:${serverConfig.serverPort}`;
@@ -232,10 +231,12 @@ export function uiResourceRegistration<T extends UIResourceServer>(
       ...definition._meta,
       ui: {
         csp: {
-          // Allow network requests (fetch, XHR, WebSocket) to the MCP server
-          connectDomains: [serverOrigin],
-          // Allow loading scripts, styles, images from the MCP server
-          resourceDomains: [serverOrigin],
+          "default-src": ["'self'"],
+          "script-src": ["'self'", "'unsafe-inline'", serverOrigin],
+          "style-src": ["'self'", "'unsafe-inline'", serverOrigin],
+          "connect-src": ["'self'", serverOrigin],
+          "img-src": ["'self'", "data:", serverOrigin],
+          "font-src": ["'self'", serverOrigin],
         },
       },
     };
@@ -305,20 +306,24 @@ export function uiResourceRegistration<T extends UIResourceServer>(
     const mcpAppMimeType = "text/html;profile=mcp-app";
 
     // Build MCP App specific metadata with CSP
-    // Per MCP Apps spec: use connectDomains and resourceDomains for CSP allowlisting
+    // Use standard CSP directive names per McpAppMetadata interface
     const serverOrigin =
       serverConfig.serverBaseUrl ||
       `http://${serverConfig.serverHost}:${serverConfig.serverPort}`;
 
+    const defaultCsp = {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "'unsafe-inline'", serverOrigin],
+      "style-src": ["'self'", "'unsafe-inline'", serverOrigin],
+      "connect-src": ["'self'", serverOrigin],
+      "img-src": ["'self'", "data:", serverOrigin],
+      "font-src": ["'self'", serverOrigin],
+    };
+
     const mcpAppMeta: Record<string, unknown> = {
       ...definition._meta,
       ui: {
-        csp: definition.mcpAppMetadata?.csp || {
-          // Allow network requests (fetch, XHR, WebSocket) to the MCP server
-          connectDomains: [serverOrigin],
-          // Allow loading scripts, styles, images from the MCP server
-          resourceDomains: [serverOrigin],
-        },
+        csp: definition.mcpAppMetadata?.csp || defaultCsp,
       },
     };
 
@@ -550,7 +555,10 @@ export function uiResourceRegistration<T extends UIResourceServer>(
             typeof definition.toolOutput === "function"
               ? definition.toolOutput(params)
               : definition.toolOutput;
-          if (toolOutputResult.content && Array.isArray(toolOutputResult.content)) {
+          if (
+            toolOutputResult.content &&
+            Array.isArray(toolOutputResult.content)
+          ) {
             // Extract text from custom toolOutput
             const textItem = toolOutputResult.content.find(
               (c: any) => c.type === "text"
