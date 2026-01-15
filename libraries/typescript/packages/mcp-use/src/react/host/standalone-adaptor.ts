@@ -171,7 +171,10 @@ export class StandaloneAdaptor implements WidgetHostAdaptor {
   getTheme(): Theme {
     // Check for theme preference in system
     // Guard against matchMedia not existing or returning undefined
-    if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function"
+    ) {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
       return mq?.matches ? "dark" : "light";
     }
