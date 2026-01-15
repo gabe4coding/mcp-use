@@ -90,19 +90,40 @@ export function detectHostType(): HostType {
 let adaptorInstance: WidgetHostAdaptor | null = null;
 
 /**
+ * Options for creating a host adaptor
+ */
+export interface CreateHostAdaptorOptions {
+  /**
+   * Explicit host type override. When provided, skips auto-detection.
+   * Use this for testing or when you know the target environment.
+   */
+  hostType?: HostType;
+}
+
+/**
  * Create the appropriate host adaptor for the current environment
  *
  * This function is memoized and returns the same instance on subsequent calls.
  * This ensures consistent state across multiple useWidget hook invocations.
  *
+ * @param options - Optional configuration including explicit hostType override
  * @returns The host adaptor instance
+ *
+ * @example
+ * ```typescript
+ * // Auto-detect host environment (most common)
+ * const adaptor = createHostAdaptor();
+ *
+ * // Explicit host type for testing or known environments
+ * const adaptor = createHostAdaptor({ hostType: 'mcp-app' });
+ * ```
  */
-export function createHostAdaptor(): WidgetHostAdaptor {
+export function createHostAdaptor(options?: CreateHostAdaptorOptions): WidgetHostAdaptor {
   if (adaptorInstance) {
     return adaptorInstance;
   }
 
-  const hostType = detectHostType();
+  const hostType = options?.hostType ?? detectHostType();
 
   switch (hostType) {
     case "apps-sdk":

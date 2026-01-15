@@ -184,6 +184,53 @@ describe("Host Adaptor Module", () => {
       resetHostAdaptor();
       expect(getHostAdaptor()).toBeNull();
     });
+
+    it("should create adaptor with explicit hostType option", () => {
+      // Set up environment that would normally detect as standalone
+      mockWindow.parent = mockWindow as unknown as Window;
+      mockWindow.openai = undefined;
+      mockWindow.mcpUse = undefined;
+
+      // But explicitly request mcp-app adaptor
+      const adaptor = createHostAdaptor({ hostType: "mcp-app" });
+
+      expect(adaptor).toBeInstanceOf(McpAppAdaptor);
+      expect(adaptor.hostType).toBe("mcp-app");
+    });
+
+    it("should prioritize explicit hostType option over auto-detection", () => {
+      // Set up environment that would detect as apps-sdk
+      mockWindow.openai = { toolInput: {} };
+
+      // But explicitly request standalone adaptor
+      const adaptor = createHostAdaptor({ hostType: "standalone" });
+
+      expect(adaptor).toBeInstanceOf(StandaloneAdaptor);
+      expect(adaptor.hostType).toBe("standalone");
+    });
+
+    it("should prioritize explicit hostType option over window.mcpUse.hostType", () => {
+      // Set up window.mcpUse.hostType
+      mockWindow.mcpUse = { hostType: "apps-sdk" };
+      mockWindow.parent = mockWindow as unknown as Window;
+      mockWindow.openai = undefined;
+
+      // But explicitly request mcp-app adaptor via parameter
+      const adaptor = createHostAdaptor({ hostType: "mcp-app" });
+
+      expect(adaptor).toBeInstanceOf(McpAppAdaptor);
+      expect(adaptor.hostType).toBe("mcp-app");
+    });
+
+    it("should fall back to detectHostType when no explicit hostType provided", () => {
+      mockWindow.parent = mockWindow as unknown as Window;
+      mockWindow.openai = undefined;
+      mockWindow.mcpUse = undefined;
+
+      const adaptor = createHostAdaptor({});
+
+      expect(adaptor).toBeInstanceOf(StandaloneAdaptor);
+    });
   });
 
   describe("StandaloneAdaptor", () => {
