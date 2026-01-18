@@ -48,9 +48,7 @@ describe("runGenerate", () => {
   });
 
   it("throws exit code 2 on config errors", async () => {
-    inspectServersMock.mockRejectedValueOnce(
-      new EvalConfigError("bad config")
-    );
+    inspectServersMock.mockRejectedValueOnce(new EvalConfigError("bad config"));
 
     await expect(
       runGenerate({ planner: "openai:gpt-4o-mini", config: "bad.json" })
@@ -59,7 +57,17 @@ describe("runGenerate", () => {
 
   it("writes generated code to stdout when selected", async () => {
     inspectServersMock.mockResolvedValueOnce([
-      { name: "simple", tools: [{ name: "add", description: "", inputSchema: { type: "object", properties: {} } }], resources: [] },
+      {
+        name: "simple",
+        tools: [
+          {
+            name: "add",
+            description: "",
+            inputSchema: { type: "object", properties: {} },
+          },
+        ],
+        resources: [],
+      },
     ]);
     selectServersMock.mockResolvedValueOnce(["simple"]);
     selectToolsMock.mockResolvedValueOnce(["add"]);
@@ -70,7 +78,11 @@ describe("runGenerate", () => {
       {
         server: "simple",
         tools: [
-          { name: "add", description: "", tests: [{ category: "direct", prompt: "Add 1 and 2" }] },
+          {
+            name: "add",
+            description: "",
+            tests: [{ category: "direct", prompt: "Add 1 and 2" }],
+          },
         ],
         resources: [],
       },

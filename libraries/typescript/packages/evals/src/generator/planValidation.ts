@@ -3,44 +3,47 @@ import { TestPlanSchema, type TestPlan } from "./planSchema.js";
 
 function sanitizeJson(jsonStr: string): string {
   // Replace JavaScript-style undefined with null for valid JSON
-  return jsonStr.replace(/:\s*undefined\b/g, ': null');
+  return jsonStr.replace(/:\s*undefined\b/g, ": null");
 }
 
-function extractBalancedJson(content: string, startIndex: number): string | null {
+function extractBalancedJson(
+  content: string,
+  startIndex: number
+): string | null {
   let depth = 0;
   let inString = false;
   let escape = false;
-  
+
   for (let i = startIndex; i < content.length; i++) {
     const char = content[i];
-    
+
     if (escape) {
       escape = false;
       continue;
     }
-    
-    if (char === '\\') {
+
+    if (char === "\\") {
       escape = true;
       continue;
     }
-    
+
     if (char === '"' && !escape) {
       inString = !inString;
       continue;
     }
-    
+
     if (inString) continue;
-    
-    if (char === '{') {
+
+    if (char === "{") {
       depth++;
-    } else if (char === '}') {
+    } else if (char === "}") {
       depth--;
       if (depth === 0) {
         return content.slice(startIndex, i + 1);
       }
     }
   }
-  
+
   return null;
 }
 
@@ -54,7 +57,7 @@ export function extractPlannerJson(content: string): unknown {
     }
   }
 
-  const firstBrace = content.indexOf('{');
+  const firstBrace = content.indexOf("{");
   if (firstBrace !== -1) {
     const extracted = extractBalancedJson(content, firstBrace);
     if (extracted) {

@@ -52,7 +52,7 @@ export function parseJudgeResponse(content: string): JudgeResult {
 
 async function getJudgeModel(configPath?: string) {
   const resolvedPath = configPath ?? "";
-  
+
   // Check if we have a valid cached model
   if (cachedModel && cachedConfigPath === resolvedPath) {
     // Check if config file has changed
@@ -111,11 +111,13 @@ async function getJudgeModel(configPath?: string) {
       temperature: 0,
     });
   } else {
-    throw new EvalConfigError(`Unsupported judge provider: ${agentConfig.provider}`);
+    throw new EvalConfigError(
+      `Unsupported judge provider: ${agentConfig.provider}`
+    );
   }
 
   cachedConfigPath = resolvedPath;
-  
+
   // Store mtime for cache invalidation
   if (resolvedPath) {
     try {
@@ -127,7 +129,7 @@ async function getJudgeModel(configPath?: string) {
   } else {
     cachedConfigMtime = null;
   }
-  
+
   return cachedModel;
 }
 

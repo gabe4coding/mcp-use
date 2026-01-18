@@ -1,5 +1,5 @@
 import type { BaseMessage } from "mcp-use";
-import { MCPAgent } from "mcp-use";
+import type { MCPAgent } from "mcp-use";
 import type { MCPClient } from "mcp-use";
 import { attachToolResults } from "./toolResultCapture.js";
 import { attachResourceTracking } from "./resourceTracking.js";
@@ -11,7 +11,10 @@ interface EvalAgentOptions {
 }
 
 function isAIMessage(message: BaseMessage): boolean {
-  const msg = message as BaseMessage & { type?: string; _getType?: () => string };
+  const msg = message as BaseMessage & {
+    type?: string;
+    _getType?: () => string;
+  };
   if (typeof msg._getType === "function") {
     return msg._getType() === "ai";
   }
@@ -40,7 +43,10 @@ export class EvalAgent {
     this.client = client;
     this.serverLifecycle = options.serverLifecycle;
     this.usage = options.usage;
-    attachResourceTracking(this.client.getAllActiveSessions(), this.resourceAccessLog);
+    attachResourceTracking(
+      this.client.getAllActiveSessions(),
+      this.resourceAccessLog
+    );
   }
 
   async run(
@@ -64,7 +70,10 @@ export class EvalAgent {
     if (this.serverLifecycle === "test" && !isFollowUp) {
       await this.client.closeAllSessions();
       await this.client.createAllSessions();
-      attachResourceTracking(this.client.getAllActiveSessions(), this.resourceAccessLog);
+      attachResourceTracking(
+        this.client.getAllActiveSessions(),
+        this.resourceAccessLog
+      );
     }
 
     try {
@@ -86,8 +95,7 @@ export class EvalAgent {
         }
       }
     } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : String(caught);
+      const message = caught instanceof Error ? caught.message : String(caught);
       error = {
         code: caught instanceof Error ? caught.name : "UNKNOWN",
         message,
@@ -102,9 +110,18 @@ export class EvalAgent {
     const output = lastAi ? messageToString(lastAi) : "";
 
     const usageDelta = {
-      inputTokens: Math.max(0, this.usage.inputTokens - usageBefore.inputTokens),
-      outputTokens: Math.max(0, this.usage.outputTokens - usageBefore.outputTokens),
-      totalTokens: Math.max(0, this.usage.totalTokens - usageBefore.totalTokens),
+      inputTokens: Math.max(
+        0,
+        this.usage.inputTokens - usageBefore.inputTokens
+      ),
+      outputTokens: Math.max(
+        0,
+        this.usage.outputTokens - usageBefore.outputTokens
+      ),
+      totalTokens: Math.max(
+        0,
+        this.usage.totalTokens - usageBefore.totalTokens
+      ),
     };
 
     const result: EvalResult = {

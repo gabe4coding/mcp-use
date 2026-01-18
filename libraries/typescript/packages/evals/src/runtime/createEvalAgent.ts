@@ -16,10 +16,7 @@ export interface CreateEvalAgentOptions {
   configPath?: string;
 }
 
-function resolveAgentConfig(
-  config: EvalConfig,
-  key: string
-): AgentConfig {
+function resolveAgentConfig(config: EvalConfig, key: string): AgentConfig {
   const agentConfig = config.agents[key];
   if (!agentConfig) {
     throw new EvalConfigError(`Agent "${key}" not found in eval config`);
@@ -30,8 +27,7 @@ function resolveAgentConfig(
 function createModel(agentConfig: AgentConfig) {
   if (agentConfig.provider === "openai") {
     const apiKey =
-      process.env.OPENAI_API_KEY ||
-      (agentConfig.baseUrl ? "local" : undefined);
+      process.env.OPENAI_API_KEY || (agentConfig.baseUrl ? "local" : undefined);
 
     if (!apiKey) {
       throw new EvalConfigError(
@@ -91,7 +87,7 @@ export async function createEvalAgent(
   await client.createAllSessions();
 
   const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
-  
+
   // Build agent options with optional additionalInstructions from config
   const agentOptions: any = {
     client,
@@ -101,12 +97,13 @@ export async function createEvalAgent(
     autoInitialize: true,
     callbacks: [new TokenTrackingCallback(usage)],
   };
-  
+
   // Add additionalInstructions if provided in config
   if (config.defaults.additionalInstructions) {
-    agentOptions.additionalInstructions = config.defaults.additionalInstructions;
+    agentOptions.additionalInstructions =
+      config.defaults.additionalInstructions;
   }
-  
+
   const agent = new MCPAgent(agentOptions);
 
   return new EvalAgent(agent, client, {

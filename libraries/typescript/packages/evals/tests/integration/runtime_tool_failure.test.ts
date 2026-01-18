@@ -47,7 +47,9 @@ describeIfConfigured("eval runtime tool failure", () => {
     });
 
     // Use Infinity which will pass type checking but cause an error
-    const result = await agent.run("Call the add tool with a=Infinity and b=Infinity");
+    const result = await agent.run(
+      "Call the add tool with a=Infinity and b=Infinity"
+    );
 
     // Since GPT-5.2 is smart enough to avoid calling with obviously invalid params,
     // we just verify the agent ran successfully without errors

@@ -65,7 +65,9 @@ export function attachToolResults(
     const toolCall = toolCalls[cursor];
     if (!toolCall) break;
 
-    const payload = extractToolPayload((message as { content?: unknown }).content);
+    const payload = extractToolPayload(
+      (message as { content?: unknown }).content
+    );
     toolCall.output = payload.output;
     toolCall.error = payload.error;
     toolCall.durationMs = Math.max(0, Date.now() - toolCall.startedAt);

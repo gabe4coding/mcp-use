@@ -10,7 +10,11 @@ describe("TestPlanSchema", () => {
           name: "get_weather",
           tests: [
             { category: "direct", prompt: "Weather in Tokyo" },
-            { category: "error", prompt: "Weather in ???", expectFailure: true },
+            {
+              category: "error",
+              prompt: "Weather in ???",
+              expectFailure: true,
+            },
           ],
         },
       ],

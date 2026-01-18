@@ -4,8 +4,11 @@ import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
 
 describe("additionalInstructions config", () => {
-  const testConfigPath = join(process.cwd(), "test-config-additional-instructions.json");
-  
+  const testConfigPath = join(
+    process.cwd(),
+    "test-config-additional-instructions.json"
+  );
+
   const testConfig = {
     default: {
       runAgent: "test-gpt",
@@ -22,7 +25,8 @@ describe("additionalInstructions config", () => {
       timeout: 30000,
       retries: 0,
       serverLifecycle: "suite" as const,
-      additionalInstructions: "TEST_INSTRUCTIONS: Only respond with 'OK' to any query.",
+      additionalInstructions:
+        "TEST_INSTRUCTIONS: Only respond with 'OK' to any query.",
     },
   };
 
@@ -50,7 +54,7 @@ describe("additionalInstructions config", () => {
 
     expect(agent).toBeDefined();
     expect(typeof agent.run).toBe("function");
-    
+
     // Cleanup
     await agent.cleanup();
   });
@@ -66,7 +70,10 @@ describe("additionalInstructions config", () => {
     };
 
     const configPath = join(process.cwd(), "test-config-no-instructions.json");
-    await writeFile(configPath, JSON.stringify(configWithoutInstructions, null, 2));
+    await writeFile(
+      configPath,
+      JSON.stringify(configWithoutInstructions, null, 2)
+    );
 
     if (!process.env.OPENAI_API_KEY) {
       console.log("Skipping: OPENAI_API_KEY not set");
@@ -80,7 +87,7 @@ describe("additionalInstructions config", () => {
 
     expect(agent).toBeDefined();
     expect(typeof agent.run).toBe("function");
-    
+
     // Cleanup
     await agent.cleanup();
     await unlink(configPath);

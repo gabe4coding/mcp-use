@@ -50,13 +50,15 @@ export function mapResource(resource: {
   };
 }
 
-export async function inspectServers(options: {
-  configPath?: string;
-  servers?: string[];
-} = {}): Promise<ServerSchema[]> {
+export async function inspectServers(
+  options: {
+    configPath?: string;
+    servers?: string[];
+  } = {}
+): Promise<ServerSchema[]> {
   const config = await loadEvalConfig(options.configPath);
   const client = new MCPClient({ mcpServers: config.servers });
-  
+
   try {
     await client.createAllSessions();
   } catch (error) {
@@ -71,7 +73,7 @@ export async function inspectServers(options: {
     try {
       const session = client.requireSession(serverName);
       const tools = session.tools.map(mapTool);
-      
+
       // Try to list resources, but gracefully handle if not supported
       let resources: ResourceSchema[] = [];
       try {
@@ -92,6 +94,6 @@ export async function inspectServers(options: {
   await client.closeAllSessions().catch(() => {
     // Ignore cleanup errors
   });
-  
+
   return schemas;
 }

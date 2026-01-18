@@ -3,7 +3,7 @@ import { extractPlannerJson, validatePlan } from "./planValidation.js";
 
 describe("plan validation", () => {
   it("extracts JSON from fenced blocks", () => {
-    const content = "```json\n{\"tools\":[],\"resources\":[]}\n```";
+    const content = '```json\n{"tools":[],"resources":[]}\n```';
     const data = extractPlannerJson(content);
     const plan = validatePlan(data);
     expect(plan.tools).toEqual([]);

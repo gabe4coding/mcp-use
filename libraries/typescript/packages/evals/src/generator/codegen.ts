@@ -97,7 +97,10 @@ export class EvalCodeGenerator {
     writer.blankLine();
   }
 
-  private addResourceDescribeBlock(writer: any, resource: ResourceTestPlan): void {
+  private addResourceDescribeBlock(
+    writer: any,
+    resource: ResourceTestPlan
+  ): void {
     writer.writeLine(`describe("${escapeString(resource.name)}", () => {`);
     writer.indent(() => {
       const categories = ["direct", "indirect", "negative"] as const;
@@ -120,11 +123,14 @@ export class EvalCodeGenerator {
 
   private addToolTest(
     writer: any,
-    test: { 
-      prompt: string; 
-      expectFailure?: boolean; 
-      expectNotUsed?: boolean; 
-      expectedToolCall?: { name?: string; input?: Record<string, unknown> } | null;
+    test: {
+      prompt: string;
+      expectFailure?: boolean;
+      expectNotUsed?: boolean;
+      expectedToolCall?: {
+        name?: string;
+        input?: Record<string, unknown>;
+      } | null;
       judgeExpectation?: string | null;
     },
     toolName: string
@@ -137,11 +143,17 @@ export class EvalCodeGenerator {
     writer.indent(() => {
       writer.writeLine(`const result = await agent.run("${escapedPrompt}");`);
       if (test.expectNotUsed) {
-        writer.writeLine(`expect(result).not.toHaveUsedTool("${escapeString(toolName)}");`);
+        writer.writeLine(
+          `expect(result).not.toHaveUsedTool("${escapeString(toolName)}");`
+        );
       } else if (test.expectFailure) {
-        writer.writeLine(`expect(result).toHaveToolCallFailed("${escapeString(toolName)}");`);
+        writer.writeLine(
+          `expect(result).toHaveToolCallFailed("${escapeString(toolName)}");`
+        );
       } else {
-        writer.writeLine(`expect(result).toHaveUsedTool("${escapeString(toolName)}");`);
+        writer.writeLine(
+          `expect(result).toHaveUsedTool("${escapeString(toolName)}");`
+        );
         if (test.expectedToolCall?.input) {
           writer.writeLine(
             `expect(result).toHaveToolCallWith("${escapeString(toolName)}", ${JSON.stringify(
@@ -150,7 +162,7 @@ export class EvalCodeGenerator {
           );
         }
       }
-      
+
       // Add judge assertion if specified
       if (test.judgeExpectation) {
         writer.writeLine(
@@ -165,7 +177,11 @@ export class EvalCodeGenerator {
 
   private addResourceTest(
     writer: any,
-    test: { prompt: string; expectNotUsed?: boolean; judgeExpectation?: string | null },
+    test: {
+      prompt: string;
+      expectNotUsed?: boolean;
+      judgeExpectation?: string | null;
+    },
     resourceName: string
   ): void {
     const action = test.expectNotUsed ? "NOT " : "";
@@ -184,7 +200,7 @@ export class EvalCodeGenerator {
           `expect(result).toHaveUsedResource("${escapeString(resourceName)}");`
         );
       }
-      
+
       // Add judge assertion if specified
       if (test.judgeExpectation) {
         writer.writeLine(

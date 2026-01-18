@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { AgentConfigSchema, EvalDefaultsSchema, EvalConfigSchema } from "./config.js";
+import {
+  AgentConfigSchema,
+  EvalDefaultsSchema,
+  EvalConfigSchema,
+} from "./config.js";
 
 describe("Config Schemas", () => {
   describe("AgentConfigSchema", () => {

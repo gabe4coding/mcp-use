@@ -73,13 +73,16 @@ describe("escapeString", () => {
 
   it("should handle mixed escapes", () => {
     const input = 'Path: C:\\Users\\John\nName: "John Doe"\tAge: 30';
-    const expected = 'Path: C:\\\\Users\\\\John\\nName: \\"John Doe\\"\\tAge: 30';
+    const expected =
+      'Path: C:\\\\Users\\\\John\\nName: \\"John Doe\\"\\tAge: 30';
     expect(escapeString(input)).toBe(expected);
   });
 
   it("should escape all special characters together", () => {
-    const input = '`${"test"}` with \'quotes\' and\nnewlines';
-    const expected = '\\`\\${\\"test\\"}\\` with \\\'quotes\\\' and\\nnewlines';
+    // eslint-disable-next-line no-template-curly-in-string
+    const input = "`${\"test\"}` with 'quotes' and\nnewlines";
+    // eslint-disable-next-line no-template-curly-in-string
+    const expected = "\\`\\${\\\"test\\\"}\\` with \\'quotes\\' and\\nnewlines";
     expect(escapeString(input)).toBe(expected);
   });
 });
@@ -93,7 +96,7 @@ describe("truncate", () => {
   it("should truncate long strings", () => {
     const input = "This is a very long string that needs truncation";
     const result = truncate(input, 20);
-    
+
     expect(result.length).toBe(20);
     expect(result.endsWith("...")).toBe(true);
   });
@@ -110,7 +113,7 @@ describe("truncate", () => {
   it("should handle maxLength smaller than 3", () => {
     const input = "Test";
     const result = truncate(input, 2);
-    
+
     // Should return first 2 characters without exceeding maxLength
     expect(result).toBe("Te");
     expect(result.length).toBe(2);
@@ -119,7 +122,7 @@ describe("truncate", () => {
   it("should preserve first characters when truncating", () => {
     const input = "ABCDEFGHIJ";
     const result = truncate(input, 8);
-    
+
     expect(result.startsWith("ABCDE")).toBe(true);
     expect(result.endsWith("...")).toBe(true);
     expect(result.length).toBe(8);
@@ -128,14 +131,14 @@ describe("truncate", () => {
   it("should handle maxLength of 3", () => {
     const input = "Test";
     const result = truncate(input, 3);
-    
+
     expect(result).toBe("...");
   });
 
   it("should handle maxLength of 4", () => {
     const input = "Testing";
     const result = truncate(input, 4);
-    
+
     expect(result).toBe("T...");
     expect(result.length).toBe(4);
   });
@@ -143,7 +146,7 @@ describe("truncate", () => {
   it("should handle very long strings", () => {
     const input = "A".repeat(1000);
     const result = truncate(input, 100);
-    
+
     expect(result.length).toBe(100);
     expect(result.endsWith("...")).toBe(true);
     expect(result.startsWith("AAA")).toBe(true);

@@ -12,7 +12,11 @@ describe("EvalCodeGenerator", () => {
           description: "Get weather",
           tests: [
             { category: "direct", prompt: "Weather in Tokyo" },
-            { category: "negative", prompt: "Capital of Japan", expectNotUsed: true },
+            {
+              category: "negative",
+              prompt: "Capital of Japan",
+              expectNotUsed: true,
+            },
           ],
         },
       ],
@@ -22,7 +26,9 @@ describe("EvalCodeGenerator", () => {
     expect(output).toContain('describeIfConfigured("weather server"');
     expect(output).toContain('describe("get_weather"');
     expect(output).toContain('expect(result).toHaveUsedTool("get_weather")');
-    expect(output).toContain('expect(result).not.toHaveUsedTool("get_weather")');
+    expect(output).toContain(
+      'expect(result).not.toHaveUsedTool("get_weather")'
+    );
   });
 
   it("escapes quotes in prompts", () => {

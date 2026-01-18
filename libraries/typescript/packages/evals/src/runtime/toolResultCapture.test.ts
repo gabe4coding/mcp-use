@@ -21,7 +21,10 @@ describe("attachToolResults", () => {
 
     const messages = [
       { type: "tool", content: JSON.stringify({ result: 3 }) },
-      { type: "tool", content: JSON.stringify({ error: { code: "BAD_INPUT" } }) },
+      {
+        type: "tool",
+        content: JSON.stringify({ error: { code: "BAD_INPUT" } }),
+      },
     ];
 
     attachToolResults(toolCalls, messages as any);

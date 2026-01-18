@@ -1,5 +1,10 @@
 import { expect } from "vitest";
-import type { EvalResult, ToolCall, ToolCallError, ToolCallOutput } from "./types.js";
+import type {
+  EvalResult,
+  ToolCall,
+  ToolCallError,
+  ToolCallOutput,
+} from "./types.js";
 
 type MatcherResult = { pass: boolean; message: () => string };
 
@@ -43,7 +48,9 @@ function matchOutput(
     if (typeof output.value === "string") {
       return output.value.toLowerCase().includes(expected.toLowerCase());
     }
-    return JSON.stringify(output.value).toLowerCase().includes(expected.toLowerCase());
+    return JSON.stringify(output.value)
+      .toLowerCase()
+      .includes(expected.toLowerCase());
   }
   if (output.kind !== "json") return false;
   return partialMatch(output.value, expected);
@@ -61,7 +68,9 @@ function matchError(
     if (typeof error.value === "string") {
       return error.value.toLowerCase().includes(expected.toLowerCase());
     }
-    return JSON.stringify(error.value).toLowerCase().includes(expected.toLowerCase());
+    return JSON.stringify(error.value)
+      .toLowerCase()
+      .includes(expected.toLowerCase());
   }
   if (error.kind !== "json") return false;
   return partialMatch(error.value, expected);
@@ -94,7 +103,10 @@ expect.extend({
   ): MatcherResult {
     const toolCall = received.toolCalls.find((tc) => tc.name === toolName);
     if (!toolCall) {
-      return { pass: false, message: () => `Tool "${toolName}" was not called` };
+      return {
+        pass: false,
+        message: () => `Tool "${toolName}" was not called`,
+      };
     }
     const matches = partialMatch(toolCall.input, partialInput);
     return {
@@ -113,7 +125,10 @@ expect.extend({
   ): MatcherResult {
     const toolCall = received.toolCalls.find((tc) => tc.name === toolName);
     if (!toolCall) {
-      return { pass: false, message: () => `Tool "${toolName}" was not called` };
+      return {
+        pass: false,
+        message: () => `Tool "${toolName}" was not called`,
+      };
     }
     const matches = matchOutput(toolCall.output, partialResult);
     return {
@@ -149,7 +164,10 @@ expect.extend({
     };
   },
 
-  toHaveUsedResource(received: EvalResult, resourceName: string): MatcherResult {
+  toHaveUsedResource(
+    received: EvalResult,
+    resourceName: string
+  ): MatcherResult {
     const used = received.resourceAccess.some(
       (ra) => ra.name === resourceName || ra.uri.includes(resourceName)
     );
@@ -205,7 +223,10 @@ expect.extend({
     partialPayloadOrString: Record<string, unknown> | string
   ): MatcherResult {
     if (!received.error) {
-      return { pass: false, message: () => "Expected to have failed, but succeeded" };
+      return {
+        pass: false,
+        message: () => "Expected to have failed, but succeeded",
+      };
     }
     if (typeof partialPayloadOrString === "string") {
       const message = received.error.message ?? "";
@@ -229,7 +250,10 @@ expect.extend({
   toHaveToolCallFailed(received: EvalResult, toolName: string): MatcherResult {
     const toolCall = received.toolCalls.find((tc) => tc.name === toolName);
     if (!toolCall) {
-      return { pass: false, message: () => `Tool "${toolName}" was not called` };
+      return {
+        pass: false,
+        message: () => `Tool "${toolName}" was not called`,
+      };
     }
     return {
       pass: !!toolCall.error,
@@ -247,7 +271,10 @@ expect.extend({
   ): MatcherResult {
     const toolCall = received.toolCalls.find((tc) => tc.name === toolName);
     if (!toolCall) {
-      return { pass: false, message: () => `Tool "${toolName}" was not called` };
+      return {
+        pass: false,
+        message: () => `Tool "${toolName}" was not called`,
+      };
     }
     const matches = matchError(toolCall.error, partialPayloadOrString);
     return {
@@ -264,15 +291,23 @@ declare module "vitest" {
   interface Assertion<T = any> {
     toHaveUsedTool(toolName: string): T;
     toHaveToolCallCount(count: number): T;
-    toHaveToolCallWith(toolName: string, partialInput: Record<string, unknown>): T;
-    toHaveToolCallResult(toolName: string, partialResult: Record<string, unknown> | string): T;
+    toHaveToolCallWith(
+      toolName: string,
+      partialInput: Record<string, unknown>
+    ): T;
+    toHaveToolCallResult(
+      toolName: string,
+      partialResult: Record<string, unknown> | string
+    ): T;
     toHaveCalledToolsInOrder(toolNames: string[]): T;
     toHaveUsedResource(resourceName: string): T;
     toHaveOutputContaining(text: string): T;
     toHaveCompletedWithinMs(ms: number): T;
     toHaveUsedLessThanTokens(count: number): T;
     toHaveFailed(): T;
-    toHaveFailedWith(partialPayloadOrString: Record<string, unknown> | string): T;
+    toHaveFailedWith(
+      partialPayloadOrString: Record<string, unknown> | string
+    ): T;
     toHaveToolCallFailed(toolName: string): T;
     toHaveToolCallFailedWith(
       toolName: string,

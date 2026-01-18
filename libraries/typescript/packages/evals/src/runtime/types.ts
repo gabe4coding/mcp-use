@@ -40,9 +40,6 @@ export interface EvalResult {
 }
 
 export interface EvalAgent {
-  run(
-    prompt: string,
-    options?: { timeout?: number }
-  ): Promise<EvalResult>;
+  run(prompt: string, options?: { timeout?: number }): Promise<EvalResult>;
   cleanup(): Promise<void>;
 }

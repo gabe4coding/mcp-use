@@ -1,7 +1,9 @@
 import { checkbox, select } from "@inquirer/prompts";
 import type { ServerSchema } from "../generator/inspectServers.js";
 
-export async function selectServers(schemas: ServerSchema[]): Promise<string[]> {
+export async function selectServers(
+  schemas: ServerSchema[]
+): Promise<string[]> {
   if (!schemas.length) {
     console.log("No servers available");
     return [];
@@ -40,7 +42,9 @@ export async function selectResources(schema: ServerSchema): Promise<string[]> {
   });
 }
 
-export async function selectPlanAction(): Promise<"yes" | "regenerate" | "cancel"> {
+export async function selectPlanAction(): Promise<
+  "yes" | "regenerate" | "cancel"
+> {
   return select({
     message: "Accept plan?",
     choices: [
